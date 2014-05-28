@@ -1,9 +1,7 @@
 
 print("Initializing from lua...")
 
--- Scripting:registerScript("defaults.lua")
--- Scripting:registerScript("samples/animation-prototype.lua")
-
-Scripting:registerScript("animation_prototype/character_animation.lua")
+Scripting:registerScript("gppp/gppp_initialize.lua")
+Scripting:registerScript("gppp/gppp_update.lua")
 
 print("Finished initializing from lua.")
