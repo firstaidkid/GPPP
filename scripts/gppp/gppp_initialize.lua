@@ -46,17 +46,3 @@ end
 function defaultEnter(enterData)
 	return EventResult.Handled
 end
-
-State{
-	name = "default",
-	parent = "/game/gameRunning",
-	eventListeners = {
-		enter = { defaultEnter },
-		update = { defaultUpdate }
-	}
-}
-
-StateTransitions{
-	parent = "/game/gameRunning",
-	{ from = "__enter", to = "default" },
-}
