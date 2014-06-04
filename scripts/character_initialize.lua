@@ -61,8 +61,8 @@ do
 	cinfo.linearDamping = 1
 	character.rb = character.pc:createRigidBody(cinfo)
 	character.sc = character.go:createScriptComponent()
-	--local renderComponent = character.go:createRenderComponent()
-	--renderComponent:setPath("data/models/mario.thModel")
+	local renderComponent = character.go:createRenderComponent()
+	renderComponent:setPath("data/models/mario/mario.thModel")
 
 	-- collision event
 	--character.pc:getContactPointEvent():registerListener(collisionCharacter)
