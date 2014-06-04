@@ -113,7 +113,7 @@ function debugCamUpdate(updateData)
 	if (InputHandler:isPressed(Key.Shift)) then
 		moveSpeed = moveSpeed * 5
 	end
-	if (InputHandler:isPressed(Key.S)) then
+	if (InputHandler:isPressed(Key.P)) then
 		sleep(2)
 	end
 	if (InputHandler:isPressed(Key.Up)) then
@@ -267,7 +267,7 @@ function playerUpdate(guid, elapsedTime)
 	elseif (InputHandler:isPressed(Key.S)) then
 		player.pc.rb:applyLinearImpulse(viewDir:mulScalar(-0.5 * moveSpeed))
 	end
-		if (InputHandler:isPressed(Key.S)) then
+		if (InputHandler:isPressed(Key.P)) then
 		sleep(2)
 	end
 	if (player.firstPersonMode) then
