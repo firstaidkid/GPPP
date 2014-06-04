@@ -49,7 +49,7 @@ function updateCharacter(  )
 
 
 
-	impulse = impulse + (ground.go:getPosition() - character.go:getPosition()):mulScalar(15)
+	impulse = impulse + (ground.go:getWorldPosition() - character.go:getWorldPosition()):mulScalar(15)
 
 
 	character.rb:applyLinearImpulse(impulse)
@@ -67,7 +67,7 @@ function updateCharacter(  )
 
 
 
-	charPos = character.go:getPosition()
+	charPos = character.go:getWorldPosition()
 
 
 
