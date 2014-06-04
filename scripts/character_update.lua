@@ -73,7 +73,7 @@ function updateCharacter(  )
 
 
 
-	debugCam.cc:setPosition(Vec3(charPos.x, charPos.y - 200, charPos.z - 400));
+	debugCam.cc:setPosition(Vec3(charPos.x, charPos.y - 500, charPos.z + 100));
 	debugCam.cc:lookAt(charPos)
 
 
