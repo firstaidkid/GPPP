@@ -12,12 +12,22 @@ function collisionCharacter( event )
 end
 
 
+
+function round(num, idp)
+
+	local mult = 10^(idp or 0)
+	return math.floor(num * mult + 0.5) / mult
+end
+
+
+
+
 function updateCharacter(  )
 	-- body
-	DebugRenderer:printText(Vec2(-0.9, 0.7), "updateCharacter ")
+	--DebugRenderer:printText(Vec2(-0.9, 0.7), "updateCharacter ")
 
 	local impulse = Vec3(0,0,0)
-	local acceleration = 100
+	local acceleration = 500
 	local rotation = Vec3(0,0,0)
 
 
@@ -25,25 +35,27 @@ function updateCharacter(  )
  	local view = character.go:getViewDirection()
 
 
+	DebugRenderer:printText(Vec2(-0.9, 0.7), round(view.x, 2) .. " , " .. round(view.y, 2) .." , " .. round(view.z, 2))
 
-
-
+	DebugRenderer:drawArrow(view, view:mulScalar(150) )
 
 
 
 	if(InputHandler:isPressed(Key.Up)) then
-		impulse.y = acceleration
+		impulse.y = acceleration * view.y
+		impulse.x = acceleration * view.x
 	end
 	if(InputHandler:isPressed(Key.Down)) then
-		impulse.y = -acceleration
+		impulse.y = -acceleration * view.y
+		impulse.x = -acceleration * view.x
 	end
 	if(InputHandler:isPressed(Key.Left)) then
-		--rotation.z = -acceleration*10
-		impulse.x = -acceleration
+		rotation.z = -acceleration*5
+		--impulse.x = -acceleration
 	end
 	if(InputHandler:isPressed(Key.Right)) then
-		--rotation.z = acceleration*10
-		impulse.x = acceleration
+		rotation.z = acceleration*5
+		--impulse.x = acceleration
 	end
 
 
