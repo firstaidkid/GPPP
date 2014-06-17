@@ -1,4 +1,0 @@
-GPPP
-====
-
-Gameplay Programming Project
