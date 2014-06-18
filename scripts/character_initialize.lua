@@ -1,42 +1,40 @@
 logMessage("Initializing character_initialize.lua ...")
 
 do -- Physics world
-	local cinfo = WorldCInfo()
-	cinfo.gravity = Vec3(0, 0, 0)
-	cinfo.worldSize = 2000.0
-	local world = PhysicsFactory:createWorld(cinfo)
+	local cinfo 		= 	WorldCInfo()
+	cinfo.gravity 		= 	Vec3(0, 0, 0)
+	cinfo.worldSize 	= 	20000.0
+	local world 		= 	PhysicsFactory:createWorld(cinfo)
 	PhysicsSystem:setWorld(world)
 end
 
 PhysicsSystem:setDebugDrawingEnabled(true)
 
 do -- debugCam
-	debugCam = GameObjectManager:createGameObject("debugCam")
-	debugCam.cc = debugCam:createCameraComponent()
-	debugCam.cc:setPosition(Vec3(-300.0, 0.0, 0.0))
+	debugCam 				= 	GameObjectManager:createGameObject("debugCam")
+	debugCam.cc 			= 	debugCam:createCameraComponent()
+	debugCam.cc:setPosition(Vec3(-1000.0, 0.0, 0.0))
 	debugCam.cc:setViewDirection(Vec3(1.0, 0.0, 0.0))
-	debugCam.baseViewDir = Vec3(1.0, 0.0, 0.0)
+	debugCam.baseViewDir 	= 	Vec3(1.0, 0.0, 0.0)
 	debugCam.cc:setBaseViewDirection(debugCam.baseViewDir)
 end
 
 do
 	--Create Little Home Planet
-	guid = 1;
-
-	ground = {}
-	ground.go = GameObjectManager:createGameObject("homeplanet")
-	ground.pc = ground.go:createPhysicsComponent()
-	local cinfo = RigidBodyCInfo()
-	cinfo.position = Vec3(0,0,0)
-	cinfo.shape = PhysicsFactory:createSphere(200)
-	cinfo.motionType = MotionType.Character
-	cinfo.restitution = 0
-	cinfo.friction = 1
-	cinfo.gravityFactor = 0
-	cinfo.mass = 900000
-	cinfo.maxLinearVelocity = 1000
-	cinfo.linearDamping = 1
-	ground.rb = ground.pc:createRigidBody(cinfo)
+	homeplanet 				= 	{}
+	homeplanet.go 			= 	GameObjectManager:createGameObject("homeplanet")
+	homeplanet.pc 			= 	homeplanet.go:createPhysicsComponent()
+	local cinfo 			= 	RigidBodyCInfo()
+	cinfo.position 			= 	Vec3(0,0,0)
+	cinfo.shape 			= 	PhysicsFactory:createSphere(200)
+	cinfo.motionType 		= 	MotionType.Dynamic
+	cinfo.restitution 		= 	0
+	cinfo.friction 			= 	0
+	cinfo.gravityFactor 	= 	0
+	cinfo.mass 				= 	900000
+	cinfo.maxLinearVelocity = 	10000
+	--cinfo.linearDamping 	= 	1
+	homeplanet.rb 			= 	homeplanet.pc:createRigidBody(cinfo)
 
 
 end
@@ -68,9 +66,7 @@ do
 
 	-- collision event
 	--character.pc:getContactPointEvent():registerListener(collisionCharacter)
-	character.sc:setUpdateFunction(updateCharacter)
-	character.grounded = false
-
+	--character.sc:setUpdateFunction(updateCharacter)
 
 
 end
@@ -79,7 +75,11 @@ end
 
 
 
+function round(num, idp)
 
+	local mult = 10^(idp or 0)
+	return math.floor(num * mult + 0.5) / mult
+end
 
 
 
@@ -129,12 +129,88 @@ function debugCamUpdate(updateData)
 	return EventResult.Handled
 end
 
+
+function characterUpdate(updateData)
+
+	-- body
+	local impulse 				= 	Vec3(0,0,0)
+	local acceleration 			= 	400
+	local view 					= 	character.go:getViewDirection()
+ 	local characterUpDirection 	= 	character.go:getUpDirection()
+ 	local quaternion 			= 	Quaternion(characterUpDirection, 0)
+
+
+ 	--Debug View
+	DebugRenderer:printText(Vec2(-0.9, 0.7), round(view.x, 2) .. " , " .. round(view.y, 2) .." , " .. round(view.z, 2))
+	DebugRenderer:drawArrow(view, view:mulScalar(150) )
+
+
+	--Key Events
+	if(InputHandler:isPressed(Key.Up)) then
+		impulse.y = acceleration * view.y
+		impulse.x = acceleration * view.x
+		impulse.z = acceleration * view.z
+	end
+	if(InputHandler:isPressed(Key.Down)) then
+		impulse.y = -acceleration * view.y
+		impulse.x = -acceleration * view.x
+		impulse.z = -acceleration * view.z
+	end
+	if(InputHandler:isPressed(Key.Left)) then
+		quaternion = Quaternion(characterUpDirection, 1)
+	end
+	if(InputHandler:isPressed(Key.Right)) then
+		quaternion = Quaternion(characterUpDirection, -1)
+	end
+
+
+
+	-- gravity to homeplanet
+	impulse = impulse + (homeplanet.go:getWorldPosition() - character.go:getWorldPosition()):mulScalar(100)
+
+
+	-- apply impulse
+	character.rb:applyLinearImpulse(impulse)
+
+	-- apply rotation
+	character.go:setRotation(quaternion * character.go:getWorldRotation())
+
+
+	--if(InputHandler:isPressed(Key.Space) and character.grounded) then
+	--	character.rb:applyForce(0.5, Vec3(0,0,150000))
+	--	character.grounded = false
+	--end
+
+
+	-- camera update
+	charPos = character.go:getWorldPosition()
+
+
+	if(InputHandler:isPressed(Key.Space)) then
+		homeplanet.rb:applyForce(0.5, characterUpDirection:mulScalar(-1000000))
+	--	character.grounded = false
+	end
+
+	--debugCam.cc:setPosition(Vec3(charPos.x, charPos.y - 500, charPos.z + 100));
+	--debugCam.cc:lookAt(charPos)
+
+	return EventResult.Handled
+end
+
+
+
+
+
+
+
 State{
 	name = "debugCam",
 	parent = "/game/gameRunning",
 	eventListeners = {
 		update = { 
-			--debugCamUpdate 
+			debugCamUpdate ,
+			characterUpdate
+
 		},
 		enter = { debugCamEnter 
 			}

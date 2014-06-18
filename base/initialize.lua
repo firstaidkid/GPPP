@@ -6,6 +6,6 @@ print("Initializing from lua...")
 
 --Scripting:registerScript("gppp/camera_tests.lua")
 
-Scripting:registerScript("character_update.lua")
+--Scripting:registerScript("character_update.lua")
 Scripting:registerScript("character_initialize.lua")
 print("Finished initializing from lua.")
