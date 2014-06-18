@@ -50,15 +50,17 @@ do
 	character.pc = character.go:createPhysicsComponent()
 
 	local cinfo = RigidBodyCInfo()
-	cinfo.shape = PhysicsFactory:createBox(Vec3(10, 10, 10))
-	cinfo.motionType = MotionType.Dynamic
+	cinfo.shape = PhysicsFactory:createBox(Vec3(20, 20, 20))
+	cinfo.motionType = MotionType.Character
 	cinfo.restitution = 0
 	cinfo.friction = 0
 	cinfo.position = Vec3(0,0,200)
 	cinfo.gravityFactor = 10
 	cinfo.mass = 90
 	cinfo.maxLinearVelocity = 1000
+
 	cinfo.linearDamping = 1
+	cinfo.angularDamping = 1
 	character.rb = character.pc:createRigidBody(cinfo)
 	character.sc = character.go:createScriptComponent()
 	local renderComponent = character.go:createRenderComponent()
