@@ -28,7 +28,7 @@ do
 	ground.pc = ground.go:createPhysicsComponent()
 	local cinfo = RigidBodyCInfo()
 	cinfo.position = Vec3(0,0,0)
-	cinfo.shape = PhysicsFactory:createSphere(100)
+	cinfo.shape = PhysicsFactory:createSphere(200)
 	cinfo.motionType = MotionType.Character
 	cinfo.restitution = 0
 	cinfo.friction = 1
@@ -54,7 +54,7 @@ do
 	cinfo.motionType = MotionType.Character
 	cinfo.restitution = 0
 	cinfo.friction = 0
-	cinfo.position = Vec3(0,0,200)
+	cinfo.position = Vec3(0,0,500)
 	cinfo.gravityFactor = 10
 	cinfo.mass = 90
 	cinfo.maxLinearVelocity = 1000

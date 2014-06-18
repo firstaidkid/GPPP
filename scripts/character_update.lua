@@ -56,13 +56,13 @@ function updateCharacter(  )
 	end
 	if(InputHandler:isPressed(Key.Left)) then
 		--rotation.z = -2
-		quaternion = Quaternion(characterUpDirection, -1)
+		quaternion = Quaternion(characterUpDirection, 1)
 		--impulse.x = -acceleration
 	end
 	if(InputHandler:isPressed(Key.Right)) then
 		--rotation.z = 2
 		--impulse.x = acceleration
-		quaternion = Quaternion(characterUpDirection, 1)
+		quaternion = Quaternion(characterUpDirection, -1)
 	end
 
 
