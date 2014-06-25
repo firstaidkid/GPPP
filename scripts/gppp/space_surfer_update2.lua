@@ -6,10 +6,14 @@ function nextGUID()
 	return guid_string
 end
 
+function defaultEnter(enterData)
+	return EventResult.Handled
+end
+
 function defaultUpdate(updateData)
 	local elapsedTime = updateData:getElapsedTime() / 1000.0
 	
-	updateHomePlanet()
+	--updateHomePlanet()
 	updateCharacter()
 	updatePlanet(planet)
 	updatePlanet(planetTwo)
@@ -17,25 +21,11 @@ function defaultUpdate(updateData)
 	return EventResult.Handled
 end
 
-State{
-	name = "default",
-	parent = "/game/gameRunning",
-	eventListeners = {
-		enter = { defaultEnter },
-		update = { defaultUpdate }
-	}
-}
-
-StateTransitions{
-	parent = "/game/gameRunning",
-	{ from = "__enter", to = "default" },
-}
-
 function updateHomePlanet()
 	local impulse = Vec3(0,0,0)
 	local acceleration = 100
 	local characterUpDirection = character.go:getUpDirection()
-	-- local planetPosition = homeWorld.go:getPosition()
+	-- local planetPosition = homeWorld.go:getWorldPosition()
 	
 	if(InputHandler:isPressed(Key.W)) then
 		impulse.x = acceleration
@@ -140,32 +130,35 @@ function updateCharacter(  )
 
 	DebugRenderer:drawArrow(view, view:mulScalar(150) )
 
-	if(InputHandler:isPressed(Key.Up)) then
+	if(InputHandler:isPressed(Key.W)) then
 		impulse.y = acceleration * view.y
 		impulse.x = acceleration * view.x
 		impulse.z = acceleration * view.z
 	end
-	if(InputHandler:isPressed(Key.Down)) then
+	if(InputHandler:isPressed(Key.S)) then
 		impulse.y = -acceleration * view.y
 		impulse.x = -acceleration * view.x
 		impulse.z = -acceleration * view.z
 	end
-	if(InputHandler:isPressed(Key.Left)) then
+	if(InputHandler:isPressed(Key.A)) then
 		--rotation.z = -2
 		quaternion = Quaternion(characterUpDirection, 1)
 		--impulse.x = -acceleration
 	end
-	if(InputHandler:isPressed(Key.Right)) then
+	if(InputHandler:isPressed(Key.D)) then
 		--rotation.z = 2
 		--impulse.x = acceleration
 		quaternion = Quaternion(characterUpDirection, -1)
 	end
 	
 	if(InputHandler:isPressed(Key.Space)) then
-		--homeWorld.rb:setLinearVelocity(characterUpDirection:mulScalar(-acceleration * 0.2))
-		homeWorld.rb:applyLinearImpulse(characterUpDirection:mulScalar(-acceleration * 2000))
+		if (InputHandler:isPressed(Key.Shift)) then
+			homeWorld.rb:applyForce(0.5, characterUpDirection:mulScalar(-50000000))
+		else
+			homeWorld.rb:applyForce(0.5, characterUpDirection:mulScalar(-10000000))
+		end
 	end
-
+	
 	impulse = impulse + (homeWorld.go:getWorldPosition() - character.go:getWorldPosition()):mulScalar(100)
 
 
@@ -215,3 +208,195 @@ function inGravityZone(planet)
 		return 0
 	end
 end
+
+
+-- NEU
+
+--
+-- Debug CAM
+--
+
+function debugCamEnter(enterData)
+	debugCam:setComponentStates(ComponentState.Active)
+	return EventResult.Handled
+end
+
+function debugCamUpdate(updateData)
+
+	-- für Updates
+	defaultUpdate(updateData)
+	--
+	
+	DebugRenderer:printText(Vec2(-0.9, 0.85), "debugCamUpdate")
+
+	local mouseDelta = InputHandler:getMouseDelta()
+	local rotationSpeed = 0.2 * updateData:getElapsedTime()
+	local lookVec = mouseDelta:mulScalar(rotationSpeed)
+	debugCam.cc:look(lookVec)
+	
+	local moveVec = Vec3(0.0, 0.0, 0.0)
+	local moveSpeed = 0.5 * updateData:getElapsedTime()
+	if (InputHandler:isPressed(Key.Shift)) then
+		moveSpeed = moveSpeed * 5
+	end
+	if (InputHandler:isPressed(Key.W)) then
+		moveVec.y = moveSpeed
+	elseif (InputHandler:isPressed(Key.S)) then
+		moveVec.y = -moveSpeed
+	end
+	if (InputHandler:isPressed(Key.A)) then
+		moveVec.x = -moveSpeed
+	elseif (InputHandler:isPressed(Key.D)) then
+		moveVec.x = moveSpeed
+	end
+	debugCam.cc:move(moveVec)
+	
+	local pos = debugCam.cc:getWorldPosition()
+	DebugRenderer:printText(Vec2(-0.9, 0.80), "  pos: " .. string.format("%5.2f", pos.x) .. ", " .. string.format("%5.2f", pos.y) .. ", " .. string.format("%5.2f", pos.z))
+	local dir = debugCam:getViewDirection()
+	DebugRenderer:printText(Vec2(-0.9, 0.75), "  dir: " .. string.format("%5.2f", dir.x) .. ", " .. string.format("%5.2f", dir.y) .. ", " .. string.format("%5.2f", dir.z))
+	
+	return EventResult.Handled
+end
+
+--
+-- normal Cam
+--
+
+function normalCamFirstPersonEnter(enterData)
+	normalCam.firstPerson:setComponentStates(ComponentState.Active)
+	character.go.firstPersonMode = true
+	return EventResult.Handled
+end
+
+function normalCamFirstPersonUpdate(updateData)
+	
+	-- für Updates
+	defaultUpdate(updateData)
+	--
+
+	DebugRenderer:printText(Vec2(-0.9, 0.85), "firstPerson")
+	local camPos = character.go:getWorldPosition() + Vec3(0.0, 0.0, 10.0)
+	normalCam.firstPerson.cc:setPosition(camPos)
+	normalCam.firstPerson.cc:lookAt(camPos + character.go:getViewDirection():mulScalar(100.0) + Vec3(0.0, 0.0, character.go.viewUpDown))
+	return EventResult.Handled
+end
+
+function normalCamFirstPersonLeave(leaveData)
+	character.go.firstPersonMode = false
+	return EventResult.Handled
+end
+
+function normalCamThirdPersonEnter(enterData)
+	normalCam.thirdPerson:setPosition(normalCam.thirdPerson.calcPosTo())
+	normalCam.thirdPerson:setComponentStates(ComponentState.Active)
+	return EventResult.Handled
+end
+
+function normalCamThirdPersonUpdate(updateData)
+
+	-- für Updates
+	defaultUpdate(updateData)
+	--
+
+	DebugRenderer:printText(Vec2(-0.9, 0.85), "thirdPerson")
+	local camPosTo = normalCam.thirdPerson.calcPosTo()
+	local camPosIs = normalCam.thirdPerson:getWorldPosition()
+	local camPosVel = camPosTo - camPosIs
+	if (camPosVel:length() > 1.0 ) then
+		normalCam.thirdPerson.pc.rb:setLinearVelocity(camPosVel:mulScalar(2.5))
+	end
+	normalCam.thirdPerson.cc:lookAt(character.go:getWorldPosition() + Vec3(0.0, 0.0, 30.0))
+	return EventResult.Handled
+end
+
+
+function normalCamIsometricEnter(enterData)
+	normalCam.isometric:setComponentStates(ComponentState.Active)
+	return EventResult.Handled
+end
+
+function normalCamIsometricUpdate(updateData)
+
+	-- für Updates
+	defaultUpdate(updateData)
+	--
+	
+	DebugRenderer:printText(Vec2(-0.9, 0.85), "isometric")
+	local rotationSpeed = 0.05 * updateData:getElapsedTime()
+	local mouseDelta = InputHandler:getMouseDelta()
+	mouseDelta.x = mouseDelta.x * rotationSpeed
+	mouseDelta.y = 0.0
+	normalCam.isometric.cc:look(mouseDelta)
+	local viewDir = normalCam.isometric.cc:getViewDirection()
+	viewDir = viewDir:mulScalar(-750.0)
+	viewDir.z = 125.0
+	normalCam.isometric.cc:setPosition(character.go:getWorldPosition() + viewDir)
+	return EventResult.Handled
+end
+
+State{
+	name = "default",
+	parent = "/game/gameRunning",
+	eventListeners = {
+		enter = { defaultEnter },
+		update = { defaultUpdate }
+	}
+}
+
+State{
+	name = "debugCam",
+	parent = "/game/gameRunning",
+	eventListeners = {
+		update = { debugCamUpdate },
+		enter = { debugCamEnter }
+	}
+}
+
+StateMachine{
+	name = "normalCam(fsm)",
+	parent = "/game/gameRunning",
+	states = {
+		{
+			name = "firstPerson",
+			eventListeners = {
+				update = { normalCamFirstPersonUpdate },
+				enter = { normalCamFirstPersonEnter },
+				leave = { normalCamFirstPersonLeave }
+			},
+		},
+		{
+			name = "thirdPerson",
+			eventListeners = {
+				update = { normalCamThirdPersonUpdate },
+				enter = { normalCamThirdPersonEnter }
+			},
+		},
+		{
+			name = "isometric",
+			eventListeners = {
+				update = { normalCamIsometricUpdate },
+				enter = { normalCamIsometricEnter }
+			},
+		},
+	},
+	transitions = {
+		{ from = "__enter", to = "firstPerson" },
+		{ from = "firstPerson", to = "thirdPerson", condition = function() return InputHandler:wasTriggered(Key.V) end },
+		{ from = "thirdPerson", to = "isometric", condition = function() return InputHandler:wasTriggered(Key.V) end },
+		{ from = "isometric", to = "firstPerson", condition = function() return InputHandler:wasTriggered(Key.V) end }
+	}
+}
+
+StateTransitions{
+	parent = "/game/gameRunning",
+	{ from = "__enter", to = "debugCam" },
+	--{ from = "default", to = "debugCam", condition = function() return InputHandler:wasTriggered(Key.C) end },
+	{ from = "debugCam", to = "normalCam(fsm)", condition = function() return InputHandler:wasTriggered(Key.C) end },
+	{ from = "normalCam(fsm)", to = "debugCam", condition = function() return InputHandler:wasTriggered(Key.C) end }
+}
+
+StateTransitions{
+	parent = "/game",
+	{ from = "gameRunning", to = "__leave", condition = function() return InputHandler:wasTriggered(Key.Q) end }
+}
