@@ -1,31 +1,40 @@
 print("running updates")
 
 function cameraUpdate(elapsedTime)
+	local camPosTo = player.go:getWorldPosition() + player.go:getViewDirection():mulScalar(1.0) + Vec3(0.0, 0.0, 0.0)
+	local camPosIs = camera.go:getWorldPosition()
+	local camPosVel = camPosTo - camPosIs
+	if (camPosVel:length() > 1.0 ) then
+		camera.pc.rb:setLinearVelocity(camPosVel:mulScalar(2.5))
+	end
+end
 
-	local mouseDelta = InputHandler:getMouseDelta()
+function playerUpdate(guid, elapsedTime)
+	local acceleration = 100
+	local jumpPower = 120000
+	local impulse = Vec3(0, 0, 0)
+	if (InputHandler:isPressed(Key.Up)) then
+		impulse.y = acceleration
+	end
+	if (InputHandler:isPressed(Key.Down)) then
+		impulse.y = -acceleration
+	end
+	if (InputHandler:isPressed(Key.Left)) then
+		impulse.x = -acceleration
+	end
+	if (InputHandler:isPressed(Key.Right)) then
+		impulse.x = acceleration
+	end
 
-	-- rotation
-	local invDir = debugCam.cc:getViewDirection():mulScalar(-1.0) -- vektor from target to cam-position (inverse of view-direction)
-	local rotQuat = Quaternion(Vec3(0.0, 0.0, 1.0), mouseDelta.x * debugCam.rotSpeed * elapsedTime)	-- rotations-quaternion, w/ rotating z-axis
-	local rotMat = rotQuat:toMat3() -- 3x3 rot-matrix from quaternion
-	local rotInvDir = rotMat:mulVec3(invDir) -- richtungsvektor mit rot-matrix multiplizieren, also vektor rotieren
-
-	-- zoom
-	debugCam.zoom = debugCam.zoom + mouseDelta.y * debugCam.zoomSpeed * elapsedTime  -- zoom abhängig von der mouse y-position 
-	if (debugCam.zoom > debugCam.maxZoom ) then debugCam.zoom = debugCam.maxZoom end  -- bounds
-	if (debugCam.zoom < debugCam.minZoom ) then debugCam.zoom = debugCam.minZoom end
-	
-	-- set new values
-	debugCam.eye = debugCam.aim + rotInvDir:mulScalar(debugCam.zoom)
-	debugCam.cc:setPosition(debugCam.eye)
-	debugCam.cc:lookAt(debugCam.aim)
+	player.rb:applyLinearImpulse(impulse)
 end
 
 
 function defaultUpdate(updateData)
 	local elapsedTime = updateData:getElapsedTime() / 1000.0
 
-	updateLevelCreation(elapsedTime)
+	updateLevel(elapsedTime)
+	playerUpdate(elapsedTime)
 	cameraUpdate(elapsedTime)
 
 	return EventResult.Handled

@@ -1,20 +1,19 @@
 require "math"
 
-lc_planets = {}
+gv_planets = {}
 
 -- CONSTANTS
-MAX_PLANET_SIZE		= 25
-
-DEPTH_OF_FIELD		= 100
+MAX_PLANET_SIZE		= 15
+MAX_PLANET_IMPULSE	= 15
+DEPTH_OF_FIELD		= 750
 
 MAP_SIZE			= 32
-MAP_SCALE			= 1
+MAP_SCALE			= 40
 
 THRESHOLD_PLANET = 0.5
-THRESHOLD_BLACKHOLE = -0.75
+THRESHOLD_BLACKHOLE = -0.9
 
 RANDOM_SEED			= os.time()
-print("RANDOM_SEED: " .. tostring(RANDOM_SEED))
 
 lc_p = {}
 lc_permutation = {151,160,137,91,90,15,
@@ -98,7 +97,7 @@ function fBm(x, y, z, octaves, lacunarity, gain)
 	local lacunarity = lacunarity or 2.0
 	local gain = gain or 0.5
     local amplitude = 1.0;
-    local frequency = 1.0;
+    local frequency = 3.0;
     local sum = 0.0;
     for i = 0, octaves do
         --sum = sum + amplitude * (1-math.abs(noise(x * frequency, y * frequency, z * frequency)))
@@ -117,8 +116,8 @@ local min = 0
 
 
 function initLevelCreation()
+	print("Init Level with RANDOM_SEED: " .. tostring(RANDOM_SEED))
 	math.randomseed(RANDOM_SEED)
-	MAP_SCALE = math.random(20, 30)
 	local map_offset = (MAP_SIZE * MAP_SCALE)/2
 
     for x = 1, MAP_SIZE do
@@ -140,14 +139,21 @@ function initLevelCreation()
                 if(density > THRESHOLD_PLANET) then
                 	cp = cp + 1
                 	local p = {}
+                	local pPos = Vec3(x*MAP_SCALE - map_offset, y*MAP_SCALE - map_offset, z*MAP_SCALE - map_offset)
+
 					p.go = GameObjectManager:createGameObject(nextGUID())
 					p.pc = p.go:createPhysicsComponent()
+					
 					local cinfo = RigidBodyCInfo()
 					cinfo.shape = PhysicsFactory:createSphere(m_size)
 					cinfo.motionType = MotionType.Dynamic
-					cinfo.position = Vec3(x*MAP_SCALE - map_offset, y*MAP_SCALE - map_offset, z*MAP_SCALE - map_offset)
+					cinfo.position = pPos
 					cinfo.mass = 1
 					p.rb = p.pc:createRigidBody(cinfo)
+
+					p.rb:setLinearVelocity(Vec3(math.random() * MAX_PLANET_IMPULSE, math.random() * MAX_PLANET_IMPULSE, math.random() * MAX_PLANET_IMPULSE))
+
+					gv_planets[cp] = p;
                 end
 	            if(density < THRESHOLD_BLACKHOLE) then
 	            	cb = cb + 1
@@ -174,8 +180,47 @@ do
 	initLevelCreation()
 end
 
-function updateLevelCreation(elapsedTime)
+function updateLevel(elapsedTime)
 	--todo
+
+	for i = 1, cp do
+		local pos = gv_planets[i].go:getWorldPosition()
+		local newPos = pos
+		local hit = false
+
+		if(pos.x > DEPTH_OF_FIELD) then
+			newPos.x = - DEPTH_OF_FIELD
+			hit = true
+		end
+		if (pos.x < -DEPTH_OF_FIELD) then
+			newPos.x = DEPTH_OF_FIELD
+			hit = true
+		end
+
+		if(pos.y > DEPTH_OF_FIELD) then
+			newPos.y = - DEPTH_OF_FIELD
+			hit = true
+		end
+		if (pos.y < -DEPTH_OF_FIELD) then
+			newPos.y = DEPTH_OF_FIELD
+			hit = true
+		end
+
+		if(pos.z > DEPTH_OF_FIELD) then
+			newPos.z = - DEPTH_OF_FIELD
+			hit = true
+		end
+		if (pos.z < -DEPTH_OF_FIELD) then
+			newPos.z = DEPTH_OF_FIELD
+			hit = true
+		end
+
+		if(hit) then
+			--gv_planets[i].go:setComponentStates(ComponentState.Inactive)
+			gv_planets[i].go:setPosition(newPos)
+		end
+	end
+
 	DebugRenderer:printText(Vec2(-0.99, 0.75), "planets: " .. cp .. " | blackholes: " .. cb)
 	DebugRenderer:printText(Vec2(-0.99, 0.8), "max: " .. max .. " | min: " .. min)
 end
