@@ -26,8 +26,8 @@ struct PS_INPUT
 PS_INPUT VS( VS_INPUT input )
 {
     PS_INPUT output = (PS_INPUT)0;
-    output.Pos.x = (input.Pos.x / targetSize.x) * 2.0f - 1.0f;
-    output.Pos.y = (1.0f - input.Pos.y / targetSize.y) * 2.0f - 1.0f;
+    output.Pos.x = input.Pos.x;
+    output.Pos.y = input.Pos.y;
     output.Pos.z = 0.5f;
     output.Pos.w = 1.0f;
 

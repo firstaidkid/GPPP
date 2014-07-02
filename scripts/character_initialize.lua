@@ -6,7 +6,12 @@ do -- Physics world
 	cinfo.worldSize 	= 	20000.0
 	local world 		= 	PhysicsFactory:createWorld(cinfo)
 	PhysicsSystem:setWorld(world)
+	guid = 1
+
+	local currentHomeplanet
+	
 end
+
 
 PhysicsSystem:setDebugDrawingEnabled(true)
 
@@ -19,27 +24,6 @@ do -- debugCam
 	debugCam.cc:setBaseViewDirection(debugCam.baseViewDir)
 end
 
-do
-	--Create Little Home Planet
-	homeplanet 				= 	{}
-	homeplanet.go 			= 	GameObjectManager:createGameObject("homeplanet")
-	homeplanet.pc 			= 	homeplanet.go:createPhysicsComponent()
-	local cinfo 			= 	RigidBodyCInfo()
-	cinfo.position 			= 	Vec3(0,0,0)
-	cinfo.shape 			= 	PhysicsFactory:createSphere(200)
-	cinfo.motionType 		= 	MotionType.Dynamic
-	cinfo.restitution 		= 	0
-	cinfo.friction 			= 	0
-	cinfo.gravityFactor 	= 	0
-	cinfo.mass 				= 	900000
-	cinfo.maxLinearVelocity = 	10000
-	--cinfo.linearDamping 	= 	1
-	homeplanet.rb 			= 	homeplanet.pc:createRigidBody(cinfo)
-
-
-end
--- create ID
-
 
 -- Create Character
 do
@@ -48,7 +32,7 @@ do
 	character.pc = character.go:createPhysicsComponent()
 
 	local cinfo = RigidBodyCInfo()
-	cinfo.shape = PhysicsFactory:createBox(Vec3(20, 20, 20))
+	cinfo.shape = PhysicsFactory:createBox(Vec3(20, 20, 1))
 	cinfo.motionType = MotionType.Character
 	cinfo.restitution = 0
 	cinfo.friction = 0
@@ -68,8 +52,144 @@ do
 	--character.pc:getContactPointEvent():registerListener(collisionCharacter)
 	--character.sc:setUpdateFunction(updateCharacter)
 
+end
+
+
+
+function nextGUID()
+	local guid_string = tostring(guid)
+	guid = guid + 1
+	return guid_string
+end
+
+function grow( i )
+	-- body
+
+	local characterUpDirection 	= 	character.go:getUpDirection()
+	local impulse = (homeplanet.go:getWorldPosition() + character.go:getWorldPosition()):mulScalar(20)
+
+
+	-- apply impulse
+	--character.go:setPosition(characterUpDirection:mulScalar(i *20))
+
+
+	--targetObject:setScale(Vec3(2,2,2))
+	for k,v in pairs(planets) do
+		--planets[k].go:setPosition(homeplanet.go:getWorldPosition())
+		planets[k].go:setComponentStates(ComponentState.Inactive)
+		if(k==i)then
+			planets[k].go:setComponentStates(ComponentState.Active)
+		end
+
+	end
+
+	currentHomeplanet = planets[i]
+
 
 end
+
+
+-- create planet 
+function create_Planet( size, type )
+	-- body
+	local planet 				= 	{}
+	planet.go 			= 	GameObjectManager:createGameObject(nextGUID())
+	planet.pc 			= 	planet.go:createPhysicsComponent()
+	local cinfo 			= 	RigidBodyCInfo()
+	cinfo.position 			= 	Vec3(0,0,0)
+	cinfo.shape 			= 	PhysicsFactory:createSphere(size)
+	cinfo.motionType 		= 	type
+	cinfo.restitution 		= 	0
+	cinfo.friction 			= 	0
+	cinfo.gravityFactor 	= 	0
+	cinfo.mass 				= 	900000
+	cinfo.maxLinearVelocity = 	10000
+	--cinfo.linearDamping 	= 	1
+	planet.rb 			= 	planet.pc:createRigidBody(cinfo)
+	
+	-- parenting geht nicht
+	--planet.go:setParent(homeplanet.go)
+	return planet
+
+end
+
+
+-- create planet 
+function create_random_Planet( size, type )
+	-- body
+	local planet 				= 	{}
+	planet.go 			= 	GameObjectManager:createGameObject(nextGUID())
+	planet.pc 			= 	planet.go:createPhysicsComponent()
+	local cinfo 			= 	RigidBodyCInfo()
+	cinfo.position 			= 	Vec3(math.random(-5000,5000),math.random(-5000,5000),math.random(-5000,5000))
+	cinfo.shape 			= 	PhysicsFactory:createSphere(size)
+	cinfo.motionType 		= 	type
+	cinfo.restitution 		= 	0
+	cinfo.friction 			= 	0
+	cinfo.gravityFactor 	= 	0
+	cinfo.mass 				= 	900000
+	cinfo.maxLinearVelocity = 	10000
+	--cinfo.linearDamping 	= 	1
+	planet.rb 			= 	planet.pc:createRigidBody(cinfo)
+	planet.rb:setLinearVelocity(Vec3(math.random(-100,100),math.random(-100,100),math.random(-100,100)))
+	
+	-- parenting geht nicht
+	--planet.go:setParent(homeplanet.go)
+	return planet
+
+end
+
+
+
+
+
+do
+	--Create Little Home Planet
+	homeplanet 				= 	{}
+	homeplanet.go 			= 	GameObjectManager:createGameObject("homeplanet")
+	homeplanet.pc 			= 	homeplanet.go:createPhysicsComponent()
+	local cinfo 			= 	RigidBodyCInfo()
+	cinfo.position 			= 	Vec3(0,0,0)
+	cinfo.shape 			= 	PhysicsFactory:createSphere(200)
+	--cinfo.motionType 		= 	MotionType.Dynamic
+	cinfo.motionType 		= 	MotionType.Keyframed
+	cinfo.restitution 		= 	0
+	cinfo.friction 			= 	0
+	cinfo.gravityFactor 	= 	0
+	cinfo.mass 				= 	900000
+	cinfo.maxLinearVelocity = 	10000
+	--cinfo.linearDamping 	= 	1
+	homeplanet.rb 			= 	homeplanet.pc:createRigidBody(cinfo)
+	
+	planets = {}
+
+
+	for i=1,10 do 
+		print(i) 
+		--planets[i] = create_Planet( i* 20 + 100, MotionType.Keyframed )
+		planets[i] = create_Planet( i, MotionType.Keyframed )
+	end
+
+	for a=1,500 do 
+		--print(i) 
+		create_random_Planet( math.random(100, 200), MotionType.Dynamic )
+	end
+
+	grow( 5 )
+end
+-- create ID
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -85,11 +205,13 @@ end
 
 
 
-function nextGUID()
-	local guid_string = tostring(guid)
-	guid = guid + 1
-	return guid_string
-end
+
+
+
+
+
+
+
 
 
 
@@ -166,7 +288,7 @@ function characterUpdate(updateData)
 
 
 	-- gravity to homeplanet
-	impulse = impulse + (homeplanet.go:getWorldPosition() - character.go:getWorldPosition()):mulScalar(100)
+	impulse = impulse + (homeplanet.go:getWorldPosition() - character.go:getWorldPosition()):mulScalar(10)
 
 
 	-- apply impulse
@@ -187,19 +309,65 @@ function characterUpdate(updateData)
 
 
 	if(InputHandler:isPressed(Key.Space)) then
-		homeplanet.rb:applyForce(0.5, characterUpDirection:mulScalar(-1000000))
+		homeplanet.rb:setLinearVelocity(characterUpDirection:mulScalar(-100))
+		--parentImpulseToChildren( characterUpDirection:mulScalar(-200) )
+
 	--	character.grounded = false
 	end
 
-	--debugCam.cc:setPosition(Vec3(charPos.x, charPos.y - 500, charPos.z + 100));
-	--debugCam.cc:lookAt(charPos)
+	debugCam.cc:setPosition((homeplanet.go:getWorldPosition() - character.go:getWorldPosition()):mulScalar(-3));
+	--debugCam.cc:setPosition(Vec3(view.x*1000, view.y *1000, view.z * 1000));
+	debugCam.cc:lookAt(homeplanet.go:getWorldPosition())
 
 	return EventResult.Handled
 end
 
 
+function parentImpulseToChildren( velocity )
+	-- body
+
+	
+	for k,v in pairs(planets) do
+		planets[k].go:setPosition(homeplanet.go:getWorldPosition())
+		--planets[k].rb:setLinearVelocity(velocity)
+	end
+end
 
 
+
+
+function planetUpdate( updateData )
+	-- body
+	
+	for k,v in pairs(planets) do
+		planets[k].go:setPosition(homeplanet.go:getWorldPosition())
+		--planets[k].rb:setLinearVelocity(velocity)
+	end
+
+
+	if(InputHandler:isPressed(Key._1)) then
+		grow(1)
+	elseif(InputHandler:isPressed(Key._2)) then
+		grow(2)
+	elseif(InputHandler:isPressed(Key._3)) then
+		grow(3)
+	elseif(InputHandler:isPressed(Key._4)) then
+		grow(4)
+	elseif(InputHandler:isPressed(Key._5)) then
+		grow(5)
+	elseif(InputHandler:isPressed(Key._6)) then
+		grow(6)
+	elseif(InputHandler:isPressed(Key._7)) then
+		grow(7)
+	elseif(InputHandler:isPressed(Key._8)) then
+		grow(8)
+	elseif(InputHandler:isPressed(Key._9)) then
+		grow(9)
+	end
+
+	--homeplanet.go:getWorldPosition()
+	return EventResult.Handled
+end
 
 
 
@@ -209,7 +377,8 @@ State{
 	eventListeners = {
 		update = { 
 			debugCamUpdate ,
-			characterUpdate
+			characterUpdate,
+			planetUpdate
 
 		},
 		enter = { debugCamEnter 

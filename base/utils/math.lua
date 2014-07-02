@@ -10,19 +10,18 @@ function math.sign(number)
 end
 
 function toRadians(angle)
-	return angle / 180.0 * math.pi
+	return angle * ( math.pi / 180.0)
 end
 
 function toDegrees(angle)
-	return angle * 180.0 / math.pi
+	return angle * (180.0 / math.pi)
 end
 
 local function quatAxisAngle(axis, angle)
 	local quat = _Quaternion()
 		
-	angle = toRadians(angle)
+	angle = toRadians(angle) /2
 	temp = math.sin(angle)
-	angle = angle /2
 	quat.x = axis.x * temp
 	quat.y = axis.y * temp
 	quat.z = axis.z * temp

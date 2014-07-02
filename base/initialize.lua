@@ -1,11 +1,26 @@
 
-print("Initializing from lua...")
+logMessage("-> registering scripts...")
 
---Scripting:registerScript("gppp/gppp_initialize.lua")
---Scripting:registerScript("gppp/gppp_update.lua")
+local function include(oneOrMoreScriptNames)
+	if type(oneOrMoreScriptNames) == "string" then
+		Scripting:registerScript(oneOrMoreScriptNames)
+	else
+		for _,scriptName in ipairs(oneOrMoreScriptNames) do
+			include(scriptName)
+		end
+	end
+end
 
---Scripting:registerScript("gppp/camera_tests.lua")
+include{
+	-- utils
+	"utils/timedStatusDisplay.lua",
 
---Scripting:registerScript("character_update.lua")
-Scripting:registerScript("character_initialize.lua")
-print("Finished initializing from lua.")
+	-- main scripts
+	--"melee_prototype/helper.lua",
+	--"melee_prototype/character.lua",
+	--"melee_prototype/main.lua",
+
+	"character_initialize.lua"
+}
+
+logMessage("<- Finished registering scripts.")
