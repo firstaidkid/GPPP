@@ -1,16 +1,16 @@
 require "math"
 
-gv_planets = {}
+gv_planets = {} 	-- array for planet-accessing
 
 -- CONSTANTS
-MAX_PLANET_SIZE		= 15
-MAX_PLANET_IMPULSE	= 15
-DEPTH_OF_FIELD		= 750
+MAX_PLANET_SIZE		= 15 	-- maximum diameter of planets
+MAX_PLANET_IMPULSE	= 15 	-- random impulse upon spawn
+DEPTH_OF_FIELD		= WORLD_SIZE / 2 - 100	-- visible planet distance from center
 
-MAP_SIZE			= 32
-MAP_SCALE			= 40
+NOISE_MAP_SIZE		= 32 	-- pixel-size of noise-map (size x size x size)
+PLANET_SPACING		= 40 	-- distance between planets when spacing
 
-THRESHOLD_PLANET = 0.5
+THRESHOLD_PLANET = 0.5 		-- noise-threshold for planets (high value = high density = more planets)
 THRESHOLD_BLACKHOLE = -0.9
 
 RANDOM_SEED			= os.time()
@@ -118,13 +118,17 @@ local min = 0
 function initLevelCreation()
 	print("Init Level with RANDOM_SEED: " .. tostring(RANDOM_SEED))
 	math.randomseed(RANDOM_SEED)
-	local map_offset = (MAP_SIZE * MAP_SCALE)/2
+	local map_offset = (NOISE_MAP_SIZE * PLANET_SPACING)/2
 
-    for x = 1, MAP_SIZE do
-        for y = 1, MAP_SIZE do 
-            for z = 1, MAP_SIZE do
-                local density = fBm(x/MAP_SCALE, y/MAP_SCALE, z/MAP_SCALE) --Find out the density
+	-- get x/y/z value of 3D noise-map
+    for x = 1, NOISE_MAP_SIZE do
+        for y = 1, NOISE_MAP_SIZE do 
+            for z = 1, NOISE_MAP_SIZE do
 
+            	-- noise density at that point
+                local density = fBm(x/PLANET_SPACING, y/PLANET_SPACING, z/PLANET_SPACING) --Find out the density
+
+                -- cap density
                 if density > max then
                 	max = density
                 end
@@ -133,13 +137,15 @@ function initLevelCreation()
                 	min = density
                 end
 
+                -- calulate planet-size
                 local m_size = (math.abs(density) * 50 * MAX_PLANET_SIZE) / 50
 
                 --print("x: " .. x .. ", y: " .. z .. ", z: " .. z .. ", d: " .. density)
+                -- create planet
                 if(density > THRESHOLD_PLANET) then
                 	cp = cp + 1
                 	local p = {}
-                	local pPos = Vec3(x*MAP_SCALE - map_offset, y*MAP_SCALE - map_offset, z*MAP_SCALE - map_offset)
+                	local pPos = Vec3(x*PLANET_SPACING - map_offset, y*PLANET_SPACING - map_offset, z*PLANET_SPACING - map_offset)
 
 					p.go = GameObjectManager:createGameObject(nextGUID())
 					p.pc = p.go:createPhysicsComponent()
@@ -155,6 +161,8 @@ function initLevelCreation()
 
 					gv_planets[cp] = p;
                 end
+
+                -- create black hole
 	            if(density < THRESHOLD_BLACKHOLE) then
 	            	cb = cb + 1
 	            	local p = {}
@@ -163,7 +171,7 @@ function initLevelCreation()
 					local cinfo = RigidBodyCInfo()
 					cinfo.shape = PhysicsFactory:createBox(Vec3(m_size, m_size, m_size))
 					cinfo.motionType = MotionType.Dynamic
-					cinfo.position = Vec3(x*MAP_SCALE - map_offset, y*MAP_SCALE - map_offset, z*MAP_SCALE - map_offset)
+					cinfo.position = Vec3(x*PLANET_SPACING - map_offset, y*PLANET_SPACING - map_offset, z*PLANET_SPACING - map_offset)
 					cinfo.mass = 1
 					p.rb = p.pc:createRigidBody(cinfo)
 	            end
@@ -181,8 +189,7 @@ do
 end
 
 function updateLevel(elapsedTime)
-	--todo
-
+	-- check bounds for each planet
 	for i = 1, cp do
 		local pos = gv_planets[i].go:getWorldPosition()
 		local newPos = pos
@@ -215,8 +222,8 @@ function updateLevel(elapsedTime)
 			hit = true
 		end
 
+		-- if bounds were hit, reset position
 		if(hit) then
-			--gv_planets[i].go:setComponentStates(ComponentState.Inactive)
 			gv_planets[i].go:setPosition(newPos)
 		end
 	end

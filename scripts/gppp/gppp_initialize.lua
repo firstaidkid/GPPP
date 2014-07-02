@@ -1,6 +1,6 @@
 print("initializing gameworld")
 
-WORLD_SIZE = 2000.0
+WORLD_SIZE = 5000.0
 
 do -- Physics world
 	local cinfo = WorldCInfo()
