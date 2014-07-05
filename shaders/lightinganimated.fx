@@ -47,14 +47,22 @@ PS_INPUT VS( VS_INPUT input )
 {
     PS_INPUT output = (PS_INPUT)0;
 	
-	float4 pos = float4(input.Pos, 1.0f);
+	float4 pos = mul(float4(input.Pos, 1), Bones[input.BoneIds[0]]) * input.BoneWeights[0];
+	pos += mul(float4(input.Pos, 1), Bones[input.BoneIds[1]]) * input.BoneWeights[1];
+	pos += mul(float4(input.Pos, 1), Bones[input.BoneIds[2]]) * input.BoneWeights[2];
+	pos += mul(float4(input.Pos, 1), Bones[input.BoneIds[3]]) * input.BoneWeights[3];
 	
 	output.Pos = mul( pos, Model );
 	
     output.Pos = mul( output.Pos, View );
     output.Pos = mul( output.Pos, Projection );
-
-    output.Normal = mul( input.Normal, Model );
+	
+	
+	float4 normal = mul(Bones[input.BoneIds[0]], float4(input.Normal, 0)) * input.BoneWeights[0];
+	normal += mul(Bones[input.BoneIds[1]], float4(input.Normal, 0)) * input.BoneWeights[1];
+	normal += mul(Bones[input.BoneIds[2]], float4(input.Normal, 0)) * input.BoneWeights[2];
+	normal += mul(Bones[input.BoneIds[3]], float4(input.Normal, 0)) * input.BoneWeights[3];
+    output.Normal = mul( normal.xyz, Model );
 	
 	
 	output.Tex = input.Tex;
