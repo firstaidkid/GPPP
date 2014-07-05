@@ -118,7 +118,6 @@ function StateMachine:__call(cinfo)
 	checkName(cinfo)
 	local invalidKeys = checkTableKeys(cinfo, self.validKeys)
 
-	assert(cinfo.parent, "A StateMachine MUST have a parent state machine!")
 	local parent = extractParentStateMachine(cinfo)
 	local instance = nil
 	if parent then

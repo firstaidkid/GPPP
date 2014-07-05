@@ -23,14 +23,14 @@ function debugCamEnter(enterData)
 end
 
 function debugCamUpdate(updateData)
-
+	local deltaSeconds = updateData:getElapsedTime()
 	local mouseDelta = InputHandler:getMouseDelta()
-	local rotationSpeed = 0.2 * updateData:getElapsedTime()
+	local rotationSpeed = 200 * deltaSeconds
 	local lookVec = mouseDelta:mulScalar(rotationSpeed)
 	debugCam.cc:look(lookVec)
 
 	local moveVec = Vec3(0.0, 0.0, 0.0)
-	local moveSpeed = 0.5 * updateData:getElapsedTime()
+	local moveSpeed = 500 * deltaSeconds
 	if (InputHandler:isPressed(Key.Shift)) then
 		moveSpeed = moveSpeed * 5
 	end

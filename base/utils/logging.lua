@@ -1,7 +1,7 @@
 local function createMessage(args)
 	local message = "Lua: "
 	for _,arg in ipairs(args) do
-		message = message .. arg
+		message = message .. tostring(arg)
 	end
 	return message
 end

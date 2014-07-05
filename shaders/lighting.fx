@@ -9,7 +9,6 @@ SamplerState samLinear
 cbuffer cbNeverChanges
 {
     matrix View;
-    uint NumBones;
 };
 
 cbuffer cbChangeOnResize
@@ -21,6 +20,7 @@ cbuffer cbChangesEveryFrame
 {
     matrix Model;
     matrix Bones[128];
+    uint NumBones;
 };
 
 struct VS_INPUT
@@ -28,6 +28,8 @@ struct VS_INPUT
     float3 Pos : POSITION;
 	float3 Normal : NORMAL;
 	float2 Tex : TEXCOORD;
+	uint4 BoneIds : BLENDINDICES;
+	float4 BoneWeights : BLENDWEIGHT;
 };
 
 struct PS_INPUT
@@ -44,11 +46,17 @@ struct PS_INPUT
 PS_INPUT VS( VS_INPUT input )
 {
     PS_INPUT output = (PS_INPUT)0;
-    output.Pos = mul( float4(input.Pos, 1.0f), Model );
+	
+	float4 pos = float4(input.Pos, 1.0f);
+	
+	output.Pos = mul( pos, Model );
+	
     output.Pos = mul( output.Pos, View );
     output.Pos = mul( output.Pos, Projection );
+
+    output.Normal = mul( input.Normal, Model );
 	
-	output.Normal = mul( input.Normal, Model );
+	
 	output.Tex = input.Tex;
     
     return output;
@@ -63,7 +71,7 @@ float4 PS( PS_INPUT input) : SV_Target
 	float3 n = normalize(input.Normal);
 	float3 lightDir = normalize(float3(2, 2, 3));
 
-    return float4(diffuse.Sample( samLinear, input.Tex ).rgb, 1.0f) * (saturate( dot( n, lightDir) ) + 0.3);
+	return float4(diffuse.Sample( samLinear, input.Tex ).rgb, 1.0f) * (saturate( dot( n, lightDir) ) + 0.3);
 }
 
 
