@@ -71,7 +71,7 @@ end
 
 
 function nextGUID()
-	local guid_string = tostring(guid)
+	local guid_string = "GUID" .. tostring(guid)
 	guid = guid + 1
 	return guid_string
 end
@@ -132,10 +132,11 @@ end
 
 
 -- create planet 
-function create_random_Planet( size, type )
+function create_random_Planet( size, type, name )
 	-- body
 	local planet 				= 	{}
-	planet.go 			= 	GameObjectManager:createGameObject(nextGUID())
+	planet.go 			= 	GameObjectManager:createGameObject(tostring(name) )
+
 	planet.pc 			= 	planet.go:createPhysicsComponent()
 	local cinfo 			= 	RigidBodyCInfo()
 	cinfo.position 			= 	Vec3(math.random(-5000,5000),math.random(-5000,5000),math.random(-5000,5000))
@@ -186,33 +187,42 @@ function create_collisionSphere( size )
 
 	collisionSphere.rb:getTriggerEvent():registerListener(function(args)
 		local go = args:getRigidBody():getUserData().go
+		local rb = args:getRigidBody():getUserData().rb
 		--print((int)go:getName())
-		print(otherPlanets[tonumber(go:getName())])
-		--otherPlanets[tonumber(go:getName())].go:setComponentStates(ComponentState.Inactive)
+		--print(go:getName())
 		
+		--otherPlanets[tonumber(go:getName())].go:setComponentStates(ComponentState.Inactive)
+		--go:setParent(homeplanetBody.go)
 
 		if(growAim<maxSize)then
-			print("grow")
-			growAim = growAim + 1
+			--print("grow")
+			--growAim = growAim + 1
 		end
 
 		
 		--print(GameObjectManager:getGameObject(go:getName()):
 		--GameObjectManager:getGameObject(go:getName()):setComponentStates(ComponentState.Inactive)
-		--if args:getEventType() == TriggerEventType.Entered then
-			--timedStatusDisplay("Hit " .. go:getName())
+		if args:getEventType() == TriggerEventType.Entered then
+			print("Hit " .. go:getName())
+			rb:setLinearVelocity(Vec3(math.random(-50,50),math.random(-50,50),math.random(-50,50)))
+			go:setComponentStates(ComponentState.Inactive)
+			--go:setPosition(Vec3(0,0,0))
 --			--local hitDir = axe:getViewDirection()
 			--local hitDir = axe:getUpDirection()
 			--go.pc.rb:applyLinearImpulse(hitDir:mulScalar(-50000.0))
-		--elseif args:getEventType() == TriggerEventType.Left then
-		--	timedStatusDisplay("Not hitting " .. go:getName() .. " anymore.")
-		--end
+		elseif args:getEventType() == TriggerEventType.Left then
+			print("Not hitting " .. go:getName() .. " anymore.")
+		end
 		return EventResult.Handled
 	end)
 	collisionSphere.go:setParent(homeplanetBody.go)
 
 	return collisionSphere
 end
+
+
+
+
 
 
 
@@ -268,7 +278,7 @@ end
 
 for a=1,500 do 
 	--print(i) 
-	otherPlanets[a] = create_random_Planet( math.random(100, 200), MotionType.Dynamic )
+	otherPlanets[a] = create_random_Planet( math.random(100, 200), MotionType.Dynamic, a )
 
 end
 
