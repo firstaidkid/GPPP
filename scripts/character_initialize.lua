@@ -102,6 +102,8 @@ function grow( i )
 	end
 	character.go:setPosition(Vec3(0, 0, planetRadien[i]))
 
+	homeplanetBody.rc:setScale(Vec3(i/5,i/5,i/5))
+
 	currentGrow = i
 
 end
@@ -190,6 +192,7 @@ function create_collisionSphere( size )
 		
 
 		if(growAim<maxSize)then
+			print("grow")
 			growAim = growAim + 1
 		end
 
@@ -230,6 +233,11 @@ do
 	cinfo.gravityFactor 	= 	0
 	cinfo.mass 				= 	900000
 	cinfo.maxLinearVelocity = 	10000
+
+
+	homeplanetBody.sc = homeplanetBody.go:createScriptComponent()
+	homeplanetBody.rc = homeplanetBody.go:createRenderComponent()
+	homeplanetBody.rc:setPath("data/models/space/nibiru_50.thModel")
 
 	--cinfo.linearDamping 	= 	1
 	homeplanetBody.rb 			= 	homeplanetBody.pc:createRigidBody(cinfo)
