@@ -276,7 +276,7 @@ for i=1,maxSize do
 	collisionSpheres[i] = create_collisionSphere(planetRadien[i])
 end
 
-for a=1,500 do 
+for a=1,800 do 
 	--print(i) 
 	otherPlanets[a] = create_random_Planet( math.random(100, 200), MotionType.Dynamic, a )
 
