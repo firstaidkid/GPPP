@@ -11,6 +11,7 @@ growAim = 5
 currentGrow = 0
 character_size = 20
 numberOfPlanets = 50
+gravityZoneMultiSize = 10
 
 -- Variablen 
 planetAmount = 2
@@ -58,18 +59,27 @@ function create_collisionSphere( size )
 
 	collisionSphere.rb:getTriggerEvent():registerListener(function(args)
 		local planet = args:getRigidBody():getUserData()
-		print(planet.go:getName())
-
-		if(growAim<maxSize)then
-			growAim = growAim + 1
-		end
-			if args:getEventType() == TriggerEventType.Entered then
-
+				
+		if args:getEventType() == TriggerEventType.Entered then
+			local name4 = planet.go:getName():sub(1,4)
+			if(name4 == "plan") then
+				if(growAim<maxSize)then
+					growAim = growAim + 1
+				end
 				planet.go.isGone = true
-
-			elseif args:getEventType() == TriggerEventType.Left then
-
+				homeplanetBody.go.setColor = false
+			elseif(planet.go:getName():sub(1,4) == "grav") then
+				print("in")
+				planet.go.inGravity = true
+				homeplanetBody.go.setColor = true
 			end
+		elseif args:getEventType() == TriggerEventType.Left then
+			if(planet.go:getName():sub(1,4) == "grav") then
+				print("out")
+				planet.go.inGravity = false
+				homeplanetBody.go.setColor = false
+			end
+		end
 		return EventResult.Handled
 	end)
 	collisionSphere.go:setParent(homeplanetBody.go)
@@ -82,7 +92,7 @@ function create_GravitySphere(number, size)
 	gravityZone[number] 				= 	{}
 	gravityZone[number].go 			= 	GameObjectManager:createGameObject("gravityZone[" .. number .."]")
 	gravityZone[number].pc 			= 	gravityZone[number].go:createPhysicsComponent()
-	gravityZone[number].go.isGone = false
+	gravityZone[number].go.inGravity = false
 	
 	local cinfo 			= 	RigidBodyCInfo()
 	cinfo.position 			= 	planetArr[number].go:getWorldPosition()
@@ -98,7 +108,7 @@ function create_GravitySphere(number, size)
 	-- stores the table inside the rigidbody
 	gravityZone[number].rb:setUserData(gravityZone[number])
 	
-	gravityZone[number].sc = gravityZone[number].go:createScriptComponent()
+	--gravityZone[number].sc = gravityZone[number].go:createScriptComponent()
 	gravityZone[number].go:setComponentStates(ComponentState.Active)
 	
 	-- gravityZone[number].go:setParent(motherPlanet.go)
@@ -116,6 +126,7 @@ do -- homeWorld
 	homeplanetBody 			= {}
 	homeplanetBody.go 		= GameObjectManager:createGameObject("homeplanetBody")
 	homeplanetBody.wasPreviouslyBehind = false
+	homeplanetBody.go.setColor = false
 	homeplanetBody.pc 		= homeplanetBody.go:createPhysicsComponent()
 	
 	local cinfo 			= RigidBodyCInfo()
@@ -130,7 +141,7 @@ do -- homeWorld
 
 
 	homeplanetBody.rb = homeplanetBody.pc:createRigidBody(cinfo)
-	homeplanetBody.sc = homeplanetBody.go:createScriptComponent()
+	--homeplanetBody.sc = homeplanetBody.go:createScriptComponent()
 	
 	homeplanetBody.go:setComponentStates(ComponentState.Active)
 end
@@ -152,7 +163,7 @@ do -- homeWorldModel
 
 
 	homePlanetModel.rb = homePlanetModel.pc:createRigidBody(cinfo)
-	homePlanetModel.sc = homePlanetModel.go:createScriptComponent()
+	--homePlanetModel.sc = homePlanetModel.go:createScriptComponent()
 	homePlanetModel.rc = homePlanetModel.go:createRenderComponent()
 	homePlanetModel.rc:setPath("data/models/space/nibiru_50.thModel")
 --	homePlanetModel.rc:setPath("data/models/home_planet/home_planet.thModel")
@@ -164,7 +175,7 @@ do	-- Character
 	character = {}
 	character.go = GameObjectManager:createGameObject("character")
 
-	character.sc = character.go:createScriptComponent()
+	--character.sc = character.go:createScriptComponent()
 	local renderComponent = character.go:createRenderComponent()
 	
 	renderComponent:setPath("data/models/roboter/robot2.thModel")
@@ -197,7 +208,6 @@ function createPlanet(number, size, position)
 	planetArr[number].go = GameObjectManager:createGameObject("planetArr[" .. number .. "]")
 	planetArr[number].pc = planetArr[number].go:createPhysicsComponent()
 	planetArr[number].go.isGone = false
-	planetArr[number].go.isGravity = false
 	local cinfo = RigidBodyCInfo()
 	cinfo.shape = PhysicsFactory:createSphere(size)
 	cinfo.motionType = MotionType.Dynamic
@@ -214,7 +224,7 @@ function createPlanet(number, size, position)
 	-- planetArr[number].rc:setPath("data/models/space/nibiru_" .. size .. ".thModel")
 	planetArr[number].rc:setPath("data/models/planet_models/jupiter.thModel")
 	
-	planetArr[number].sc = planetArr[number].go:createScriptComponent()
+	--planetArr[number].sc = planetArr[number].go:createScriptComponent()
 	planetArr[number].go:setComponentStates(ComponentState.Active)
 	planetArr[number].size = size
 	
@@ -226,7 +236,7 @@ function createPlanet(number, size, position)
 end
 
 function createGravityZone(number, size)
-	create_GravitySphere(number, size * 5)
+	create_GravitySphere(number, size * gravityZoneMultiSize)
 end
 
 for j=1 , numberOfPlanets do
