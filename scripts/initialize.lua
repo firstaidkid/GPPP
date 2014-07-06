@@ -218,7 +218,7 @@ function createPlanet(number, size, position)
 	planetArr[number].go:setComponentStates(ComponentState.Active)
 	planetArr[number].size = size
 	
-	createGravityZone(number, size)
+	--createGravityZone(number, size)
 	
 	--GravityZone
 	--planetArr[number].gz = createGravityZone(size, planetArr[number])
