@@ -33,13 +33,13 @@ function defaultEnter(enterData)
 end
 
 function defaultUpdate(updateData)
-	local elapsedTime = updateData:getElapsedTime() / 1000.0
+	local elapsedTime = updateData:getElapsedTime()
 	
 	planetUpdate(elapsedTime)
 	updateCharacter(elapsedTime)
 	--updateLevel(elapsedTime)
 	for i=1 , numberOfPlanets do
-		updatePlanet(i)
+		updatePlanet(i, elapsedTime)
 	end
 	updateShortDistance()
 
@@ -48,7 +48,7 @@ function defaultUpdate(updateData)
 end
 
 
-function updateCharacter(  )
+function updateCharacter(elapsedTime)
 	local impulse = Vec3(0,0,0)
  	local characterUpDirection = character.go:getUpDirection()
 	local characterRightDirection 	= 	character.go:getRightDirection()
@@ -71,19 +71,19 @@ function updateCharacter(  )
 	
 		--Key Events
 	if(InputHandler:isPressed(Key.S)) then
-		quaternion = Quaternion(characterRightDirection, -2)
+		quaternion = Quaternion(characterRightDirection, -2 * elapsedTime *100)
 		homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
 	end
 	if(InputHandler:isPressed(Key.W)) then
-		quaternion = Quaternion(characterRightDirection, 2)
+		quaternion = Quaternion(characterRightDirection, 2 * elapsedTime *100)
 		homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
 	end
 	if(InputHandler:isPressed(Key.A)) then
-		quaternion = Quaternion(characterUpDirection, 3)
+		quaternion = Quaternion(characterUpDirection, 3 * elapsedTime *100)
 		homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
 	end
 	if(InputHandler:isPressed(Key.D)) then
-		quaternion = Quaternion(characterUpDirection, -3)
+		quaternion = Quaternion(characterUpDirection, -3 * elapsedTime *100)
 		homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
 	end
 	
@@ -113,7 +113,7 @@ function updateCharacter(  )
 		--end
 	end
 	
-	impulse = impulse + (homeplanetBody.go:getWorldPosition() - character.go:getWorldPosition()):mulScalar(10)
+	impulse = impulse + (homeplanetBody.go:getWorldPosition() - character.go:getWorldPosition()):mulScalar(10 * elapsedTime * 100)
 
 	-- Model verfolgt HauptPlanet
 	homePlanetModel.go:setPosition(homeplanetBody.go:getWorldPosition())
@@ -160,7 +160,7 @@ function updateShortDistance()
 end
 
 
-function updatePlanet(number)
+function updatePlanet(number, elapsedTime)
 	-- local impulse = Vec3(0,0,0)
 	-- local acceleration = 5
 	-- local PlanetPosition = planet.go:getWorldPosition()
@@ -183,11 +183,11 @@ function updatePlanet(number)
 		local impulse = Vec3(0,0,0)
 		local PlanetPosition = planet.go:getWorldPosition()
 		local homeWorldPosition = homeplanetBody.go:getWorldPosition()
-		local gravPlanet = (PlanetPosition - homeWorldPosition):mulScalar(1)
+		local gravPlanet = PlanetPosition - homeWorldPosition
 		
 		gravity = inGravityZone(planet)
 		if(gravity > 0) then
-			impulse = (impulse + gravPlanet):mulScalar(0.000009 * gravity)
+			impulse = (impulse + gravPlanet):mulScalar(0.000009 * gravity * elapsedTime * 100)
 		end
 		local grav = homeplanetBody.rb:getLinearVelocity()
 		homeplanetBody.rb:setLinearVelocity(grav + impulse)
