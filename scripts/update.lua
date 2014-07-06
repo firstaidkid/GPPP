@@ -19,6 +19,8 @@ function characterEnter()
 	character.ac:setMasterWeight(character.attacks[1], 1.0)
 	character.ac:easeOut(character.attacks[1], 0.0)	
 	character.ac:setBoneDebugDrawingEnabled(true)
+	
+	character.ac:setPlaybackSpeed("Walk", 3)
 end
 
 
@@ -34,11 +36,14 @@ function defaultUpdate(updateData)
 	local elapsedTime = updateData:getElapsedTime() / 1000.0
 	
 
-	updateCharacter()
+	updateCharacter(elapsedTime)
 	--updateLevel(elapsedTime)
 	planetUpdate(elapsedTime)
-	updatePlanet(planetArr[1])
-	updatePlanet(planetArr[2])
+	for i=1 , numberOfPlanets do
+		updatePlanet(planetArr[i])
+	end
+	
+	updateShortDistance()
 
 
 	return EventResult.Handled
@@ -46,15 +51,10 @@ end
 
 
 function updateCharacter(  )
-
 	local impulse = Vec3(0,0,0)
-	local acceleration = 400
-	local view = character.go:getViewDirection()
  	local characterUpDirection = character.go:getUpDirection()
 	local characterRightDirection 	= 	character.go:getRightDirection()
  	local quaternion = Quaternion(characterUpDirection, 0)
-
-	-- DebugRenderer:drawArrow(view, view:mulScalar(150) )
 	
 	if (currentGrow < growAim)then
 		grow(currentGrow+1)
@@ -107,17 +107,15 @@ function updateCharacter(  )
 			end
 		end
 	else
-		local localTimeNormalized = character.ac:getLocalTimeNormalized(character.attacks[1])
-		if (localTimeNormalized > 0.75) then
+		--local localTimeNormalized = character.ac:getLocalTimeNormalized(character.attacks[1])
+		--if (localTimeNormalized > 0.75) then
 			character.ac:easeOut(character.attacks[character.activeAttack], 0.25)
 			character.ac:easeIn("Walk", 0.25)
 			character.activeAttack = 0
-		end
+		--end
 	end
 	
 	impulse = impulse + (homeplanetBody.go:getWorldPosition() - character.go:getWorldPosition()):mulScalar(10)
-	
-	updateShortDistance()
 
 	-- Model verfolgt HauptPlanet
 	homePlanetModel.go:setPosition(homeplanetBody.go:getWorldPosition())
@@ -128,8 +126,9 @@ function getShortDistance()
 	local vec = (homeplanetBody.go:getWorldPosition() - planetArr[1].go:getWorldPosition())
 	local sDistance = vec.x*vec.x+vec.y*vec.y+vec.z*vec.z
 	local check = 0
-	for i = 2, planetAmount, 1 do
-		vec = (homeplanetBody.go:getWorldPosition() - planetArr[i].go:getWorldPosition())
+	local positionHP = homeplanetBody.go:getWorldPosition()
+	for i = 2, numberOfPlanets do
+		vec = (positionHP - planetArr[i].go:getWorldPosition())
 		tempDistance = vec.x*vec.x+vec.y*vec.y+vec.z*vec.z
 		if (sDistance > tempDistance) then
 			sDistance = tempDistance
@@ -162,26 +161,28 @@ end
 
 
 function updatePlanet(planet)
-	local impulse = Vec3(0,0,0)
-	local acceleration = 5
-	local PlanetPosition = planet.go:getWorldPosition()
-	local homeWorldPosition = homeplanetBody.go:getWorldPosition()
-	local gravPlanet = (PlanetPosition - homeWorldPosition):mulScalar(1)
+	-- local impulse = Vec3(0,0,0)
+	-- local acceleration = 5
+	-- local PlanetPosition = planet.go:getWorldPosition()
+	-- local homeWorldPosition = homeplanetBody.go:getWorldPosition()
+	-- local gravPlanet = (PlanetPosition - homeWorldPosition):mulScalar(1)
 	
 	-- Gravity to Planet
-	gravity = inGravityZone(planet)
-	if(gravity > 0) then
-		impulse = (impulse + gravPlanet):mulScalar(0.0000009 * gravity)
-	end
+	-- gravity = inGravityZone(planet)
+	-- if(gravity > 0) then
+		-- impulse = (impulse + gravPlanet):mulScalar(0.0000009 * gravity)
+	-- end
 	
 	-- Kraft auf den Planeten
-	local grav = homeplanetBody.rb:getLinearVelocity()
-	homeplanetBody.rb:setLinearVelocity(grav + impulse)
+	-- local grav = homeplanetBody.rb:getLinearVelocity()
+	-- homeplanetBody.rb:setLinearVelocity(grav + impulse)
 	
 	if(planet.go.isGone) then
-		planet.go:setPosition(Vec3(math.random(-100, 100),math.random(-100, 100),math.random(-100, 100)))
+		planet.go:setPosition(Vec3(math.random(-1000, 1000),math.random(-1000, 1000),math.random(-1000, 1000)))
+		
 		planet.go.isGone = false
 	end
+
 end
 
 function planetUpdate( updateData )

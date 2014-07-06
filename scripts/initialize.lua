@@ -1,6 +1,6 @@
 print("initializing gameworld")
 
-WORLD_SIZE = 5000.0
+WORLD_SIZE = 3000.0
 --WORLD_SIZE = 200000.0
 -- Alle Planeten Radien
 planetRadien = {}
@@ -10,6 +10,15 @@ maxSize = 100
 growAim = 5
 currentGrow = 0
 character_size = 20
+numberOfPlanets = 50
+
+-- Variablen 
+planetAmount = 2
+nearestPlanet = 1
+planetArr = {}
+gravityZone = {}
+homeWorldSize = 200
+
 
 local serpent = require("data/scripts/serpent")
 
@@ -24,6 +33,78 @@ do -- Physics world
 	PhysicsSystem:setDebugDrawingEnabled(true)
 end
 
+
+function create_collisionSphere( size )
+	-- body
+	collisionSphere 				= 	{}
+	collisionSphere.go 			= 	GameObjectManager:createGameObject(nextGUID())
+	collisionSphere.pc 			= 	collisionSphere.go:createPhysicsComponent()
+
+	local cinfo 			= 	RigidBodyCInfo()
+	cinfo.position 			= 	Vec3(0,0,0)
+	cinfo.shape 			= 	PhysicsFactory:createSphere(size)
+	cinfo.motionType 		= 	MotionType.Keyframed
+	cinfo.restitution 		= 	0
+	cinfo.friction 			= 	0
+	cinfo.gravityFactor 	= 	0
+	cinfo.mass 				= 	900000
+	cinfo.maxLinearVelocity = 	10000
+	cinfo.collisionFilterInfo = 0xff1f
+	cinfo.isTriggerVolume = true
+	collisionSphere.rb 			= 	collisionSphere.pc:createRigidBody(cinfo)
+	
+	-- stores the table inside the rigidbody
+	collisionSphere.rb:setUserData(collisionSphere)
+
+	collisionSphere.rb:getTriggerEvent():registerListener(function(args)
+		local planet = args:getRigidBody():getUserData()
+		print(planet.go:getName())
+
+		if(growAim<maxSize)then
+			growAim = growAim + 1
+		end
+			if args:getEventType() == TriggerEventType.Entered then
+
+				planet.go.isGone = true
+
+			elseif args:getEventType() == TriggerEventType.Left then
+
+			end
+		return EventResult.Handled
+	end)
+	collisionSphere.go:setParent(homeplanetBody.go)
+	
+	return collisionSphere
+end
+
+function create_GravitySphere(number, size)
+	-- body
+	gravityZone[number] 				= 	{}
+	gravityZone[number].go 			= 	GameObjectManager:createGameObject("gravityZone[" .. number .."]")
+	gravityZone[number].pc 			= 	gravityZone[number].go:createPhysicsComponent()
+	gravityZone[number].go.isGone = false
+	
+	local cinfo 			= 	RigidBodyCInfo()
+	cinfo.position 			= 	planetArr[number].go:getWorldPosition()
+	cinfo.shape 			= 	PhysicsFactory:createSphere(size)
+	cinfo.motionType 		= 	MotionType.Dynamic
+	cinfo.friction 			= 	0
+	cinfo.gravityFactor 	= 	0
+	cinfo.mass 				= 	900000
+	cinfo.maxLinearVelocity = 	100000000
+	cinfo.collisionFilterInfo = 0xff1f
+	gravityZone[number].rb 			= 	gravityZone[number].pc:createRigidBody(cinfo)
+	
+	-- stores the table inside the rigidbody
+	gravityZone[number].rb:setUserData(gravityZone[number])
+	
+	gravityZone[number].sc = gravityZone[number].go:createScriptComponent()
+	gravityZone[number].go:setComponentStates(ComponentState.Active)
+	
+	-- gravityZone[number].go:setParent(motherPlanet.go)
+	--gravityZone[number].go:setParent(planetArr[number].go)
+end
+
 guid = 0
 function nextGUID()
 	local guid_string = tostring(guid)
@@ -31,20 +112,6 @@ function nextGUID()
 	return guid_string
 end
 
--- do -- debugCam
-	-- debugCam = GameObjectManager:createGameObject("debugCam")
-	-- debugCam.cc = debugCam:createCameraComponent()
-	-- debugCam.cc:setPosition(Vec3(-600.0, 0.0, 0.0))
-	-- debugCam.cc:setViewDirection(Vec3(1.0, 0.0, 0.0))
-	-- debugCam.baseViewDir = Vec3(1.0, 0.0, 0.0)
-	-- debugCam.cc:setBaseViewDirection(debugCam.baseViewDir)
--- end
-
--- Variablen 
-planetAmount = 2
-nearestPlanet = 1
-planetArr = {}
-homeWorldSize = 200
 do -- homeWorld
 	homeplanetBody 			= {}
 	homeplanetBody.go 		= GameObjectManager:createGameObject("homeplanetBody")
@@ -64,23 +131,6 @@ do -- homeWorld
 
 	homeplanetBody.rb = homeplanetBody.pc:createRigidBody(cinfo)
 	homeplanetBody.sc = homeplanetBody.go:createScriptComponent()
-	-- homeplanetBody.rc = homeplanetBody.go:createRenderComponent()
-	-- homeplanetBody.rc:setPath("data/models/space/nibiru_50.thModel")
-	
-	-- ## Animation ##
-	-- homeplanetBody.rc:setPath("data/models/home_planet/home_planet_bones.thModel")
-	
-	-- #Animations
-	-- homeplanetBody.ac = homeplanetBody.go:createAnimationComponent()
-	-- homeplanetBody.ac:setSkeletonFile("data/models/home_planet/hp_animated_bone.hkt")
-	-- homeplanetBody.ac:setSkinFile("data/models/home_planet/hp_animated_bone.hkt")
-	
-	-- set Idles
-	-- homeplanetBody.idles = { "Idle", "IdleFidget", "IdleFidget2", "IdleFidget3" }
-	-- homeplanetBody.ac:addAnimationFile(homeplanetBody.idles[1], "data/models/home_planet/hp_bubble_bone.hkt")
-	-- homeplanetBody.activeIdle = 1
-	
-	-- ## Animation ENDE ##
 	
 	homeplanetBody.go:setComponentStates(ComponentState.Active)
 end
@@ -131,6 +181,7 @@ do	-- Character
 	
 	-- set Walk
 	character.ac:addAnimationFile("Walk", "data/models/roboter/robot_walk.hkt")
+	--character.ac:setPlaybackSpeed("Walk", 1)
 	
 	-- set Attack
 	character.attacks = { "Attack", "Attack2" }
@@ -139,11 +190,6 @@ do	-- Character
 	
 	character.go:setComponentStates(ComponentState.Active)
 	
-	-- Additional for Camera
-	character.go.firstPersonMode = false
-	character.go.currentAngularVelocity = Vec3()
-	character.go.angularVelocitySwapped = false
-	character.go.viewUpDown = 0.0
 end
 
 function createPlanet(number, size, position)
@@ -151,6 +197,7 @@ function createPlanet(number, size, position)
 	planetArr[number].go = GameObjectManager:createGameObject("planetArr[" .. number .. "]")
 	planetArr[number].pc = planetArr[number].go:createPhysicsComponent()
 	planetArr[number].go.isGone = false
+	planetArr[number].go.isGravity = false
 	local cinfo = RigidBodyCInfo()
 	cinfo.shape = PhysicsFactory:createSphere(size)
 	cinfo.motionType = MotionType.Dynamic
@@ -170,22 +217,24 @@ function createPlanet(number, size, position)
 	planetArr[number].sc = planetArr[number].go:createScriptComponent()
 	planetArr[number].go:setComponentStates(ComponentState.Active)
 	planetArr[number].size = size
+	
+	createGravityZone(number, size)
+	
+	--GravityZone
+	--planetArr[number].gz = createGravityZone(size, planetArr[number])
+	--planetArr[number].gz.go:setComponentStates(ComponentState.Inactive)
 end
 
-createPlanet(1, 50, Vec3(-40, 400, 40))
-createPlanet(2, 100, Vec3(-40, -400, 40))
-
-
-function createCollisionBox(guid, halfExtends, position)
-	local box = GameObjectManager:createGameObject(guid)
-	box.pc = box:createPhysicsComponent()
-	local cinfo = RigidBodyCInfo()
-	cinfo.shape = PhysicsFactory:createBox(halfExtends)
-	cinfo.motionType = MotionType.Fixed
-	cinfo.position = position
-	box.pc.rb = box.pc:createRigidBody(cinfo)
-	return box
+function createGravityZone(number, size)
+	create_GravitySphere(number, size * 5)
 end
+
+for j=1 , numberOfPlanets do
+    local position = Vec3(math.random(-WORLD_SIZE, WORLD_SIZE), math.random(-WORLD_SIZE, WORLD_SIZE), math.random(-WORLD_SIZE, WORLD_SIZE))
+	createPlanet(j, 50, position)
+	-- planetArr[j].gz.go:setComponentStates(ComponentState.Aktive)
+end
+
 
 function createDefaultCam(guid)
 	local cam = GameObjectManager:createGameObject(guid)
@@ -229,7 +278,6 @@ end
 normalCam.isometric = createDefaultCam("isometric")
 normalCam.isometric.cc:look(Vec2(0.0, 20.0))
 
--- Neu
 
 function grow( i )
 	-- body
@@ -259,65 +307,6 @@ function grow( i )
 
 	currentGrow = i
 
-end
-
-function create_collisionSphere( size )
-	-- body
-	collisionSphere 				= 	{}
-	collisionSphere.go 			= 	GameObjectManager:createGameObject(nextGUID())
-	collisionSphere.pc 			= 	collisionSphere.go:createPhysicsComponent()
-
-	local cinfo 			= 	RigidBodyCInfo()
-	cinfo.position 			= 	Vec3(0,0,0)
-	cinfo.shape 			= 	PhysicsFactory:createSphere(size)
-	cinfo.motionType 		= 	MotionType.Keyframed
-	cinfo.restitution 		= 	0
-	cinfo.friction 			= 	0
-	cinfo.gravityFactor 	= 	0
-	cinfo.mass 				= 	900000
-	cinfo.maxLinearVelocity = 	10000
-	cinfo.collisionFilterInfo = 0xff1f
-	cinfo.isTriggerVolume = true
-	collisionSphere.rb 			= 	collisionSphere.pc:createRigidBody(cinfo)
-	
-	-- stores the table inside the rigidbody
-	collisionSphere.rb:setUserData(collisionSphere)
-
-	collisionSphere.rb:getTriggerEvent():registerListener(function(args)
-		local planet = args:getRigidBody():getUserData()
-		
-		--print(go:getName())
-
-		print("         " .. serpent.dump(planet))
-		print("         ")
-		print("     GameObject::     " .. serpent.dump(planetArr[1].planet))
-		
-		
-		
-		--otherPlanets[tonumber(go:getName())].go:setComponentStates(ComponentState.Inactive)
-		
-
-		if(growAim<maxSize)then
-			growAim = growAim + 1
-		end
-
-		--print(GameObjectManager:getGameObject(go:getName()))
-		
-		--GameObjectManager:getGameObject(go:getName()):setComponentStates(ComponentState.Inactive)
-		if args:getEventType() == TriggerEventType.Entered then
-			-- local help = GameObjectManager:getGameObject(go.go:getName())
-				--go.rb:setLinearVelocity(Vec3(200000,0,0))
-				-- planet.rb:setLinearVelocity(Vec3(999999,0,0))
-				planet.go.isGone = true
-
-		elseif args:getEventType() == TriggerEventType.Left then
-
-		end
-		return EventResult.Handled
-	end)
-	collisionSphere.go:setParent(homeplanetBody.go)
-
-	return collisionSphere
 end
 
 for i=1,maxSize do 

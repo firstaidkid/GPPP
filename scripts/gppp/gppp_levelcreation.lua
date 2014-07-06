@@ -10,7 +10,7 @@ DEPTH_OF_FIELD		= WORLD_SIZE / 2 - 100	-- visible planet distance from center
 NOISE_MAP_SIZE		= 32 	-- pixel-size of noise-map (size x size x size)
 PLANET_SPACING		= 40 	-- distance between planets when spacing
 
-THRESHOLD_PLANET = 0.5 		-- noise-threshold for planets (high value = high density = less planets)
+THRESHOLD_PLANET = 0.6		-- noise-threshold for planets (high value = high density = less planets)
 THRESHOLD_BLACKHOLE = -0.9
 
 RANDOM_SEED			= os.time()
@@ -152,7 +152,7 @@ function initLevelCreation()
 					
 					local cinfo = RigidBodyCInfo()
 					cinfo.shape = PhysicsFactory:createSphere(m_size)
-					cinfo.motionType = MotionType.Dynamic
+					cinfo.motionType = MotionType.Fixed
 					cinfo.position = pPos
 					cinfo.mass = 1
 					p.rb = p.pc:createRigidBody(cinfo)
