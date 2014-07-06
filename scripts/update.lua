@@ -1,5 +1,8 @@
 print("running updates")
 
+local acceleration = 0
+local velocityDirection = Vec3(0, 0, 0)
+
 function homePlanetEnter()
 
 	-- ## for Animations + Skaling
@@ -51,6 +54,10 @@ end
 
 
 function updateCharacter(  )
+
+
+	DebugRenderer:printText(Vec2(-0.5, 0.25), "  acceleration: " .. tostring(acceleration))
+
 	local impulse = Vec3(0,0,0)
  	local characterUpDirection = character.go:getUpDirection()
 	local characterRightDirection 	= 	character.go:getRightDirection()
@@ -73,19 +80,27 @@ function updateCharacter(  )
 	
 		--Key Events
 	if(InputHandler:isPressed(Key.S)) then
-		quaternion = Quaternion(characterRightDirection, -2)
-		homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
+		--quaternion = Quaternion(characterRightDirection, -2)
+		--homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
 	end
 	if(InputHandler:isPressed(Key.W)) then
-		quaternion = Quaternion(characterRightDirection, 2)
-		homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
+		--quaternion = Quaternion(characterRightDirection, 2)
+		--homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
 	end
 	if(InputHandler:isPressed(Key.A)) then
-		quaternion = Quaternion(characterUpDirection, 3)
-		homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
+		--quaternion = Quaternion(characterUpDirection, 3)
+		--homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
 	end
 	if(InputHandler:isPressed(Key.D)) then
-		quaternion = Quaternion(characterUpDirection, -3)
+		--quaternion = Quaternion(characterUpDirection, -3)
+		--homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
+	end
+	if(InputHandler:isPressed(Key.Q) or InputHandler:isPressed(Key.A) or InputHandler:isPressed(Key.Left)) then
+		quaternion = Quaternion(homeplanetBody.go:getViewDirection(), -2)
+		homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
+	end
+	if(InputHandler:isPressed(Key.E)  or InputHandler:isPressed(Key.D) or InputHandler:isPressed(Key.Right)) then
+		quaternion = Quaternion(homeplanetBody.go:getViewDirection(), 2)
 		homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
 	end
 	
@@ -101,9 +116,15 @@ function updateCharacter(  )
 				-- homeplanetBody.rb:applyForce(0.5, characterUpDirection:mulScalar(-50000))
 				homeplanetBody.rb:setLinearVelocity(characterUpDirection:mulScalar(200))
 			else
+				if(acceleration<250)then
+					acceleration = acceleration - 6
+				end
+
+				velocityDirection = characterUpDirection:mulScalar(acceleration)
+
 				
 				-- homeplanetBody.rb:applyForce(0.5, characterUpDirection:mulScalar(-10000))
-				homeplanetBody.rb:setLinearVelocity(characterUpDirection:mulScalar(-200))
+				
 			end
 		end
 	else
@@ -114,7 +135,12 @@ function updateCharacter(  )
 			character.activeAttack = 0
 		--end
 	end
-	
+
+	if(acceleration<-20)then
+		acceleration = acceleration + 1
+	end
+	--characterUpDirection:mulScalar(acceleration)
+	homeplanetBody.rb:setLinearVelocity(velocityDirection)
 	impulse = impulse + (homeplanetBody.go:getWorldPosition() - character.go:getWorldPosition()):mulScalar(10)
 
 	-- Model verfolgt HauptPlanet
@@ -178,10 +204,17 @@ function updatePlanet(planet)
 	-- homeplanetBody.rb:setLinearVelocity(grav + impulse)
 	
 	if(planet.go.isGone) then
-		planet.go:setPosition(Vec3(math.random(-1000, 1000),math.random(-1000, 1000),math.random(-1000, 1000)))
+		local position = Vec3(math.random(-WORLD_SIZE, WORLD_SIZE), 0, math.random(-WORLD_SIZE, WORLD_SIZE))
+		planet.go:setPosition(position)
 		
 		planet.go.isGone = false
 	end
+
+	local planetVelocity = Vec3(math.random(-5, 5), math.random(-5, 5), math.random(-5, 5))
+
+	--planetArr[number].rb:setLinearVelocity(planetVelocity)
+	--planet.rb:applyForce(0.5, planetVelocity)
+
 
 end
 
@@ -417,7 +450,7 @@ function normalCamIsometricUpdate(updateData)
 	normalCam.isometric.cc:look(mouseDelta)
 	local viewDir = normalCam.isometric.cc:getViewDirection()
 
-	viewDir = viewDir:mulScalar(math.atan(homeWorldSize) * -500.0)
+	viewDir = viewDir:mulScalar(math.atan(homeWorldSize) * -(500.0 +currentGrow*20))
 	normalCam.isometric.cc:setPosition(character.go:getWorldPosition() + viewDir)
 
 
@@ -495,7 +528,7 @@ StateTransitions{
 	{ from = "normalCam(fsm)", to = "debugCam", condition = function() return InputHandler:wasTriggered(Key.C) end }
 }
 
-StateTransitions{
-	parent = "/game",
-	{ from = "gameRunning", to = "__leave", condition = function() return InputHandler:wasTriggered(Key.Q) end }
-}
+--StateTransitions{
+	--parent = "/game",
+	--{ from = "gameRunning", to = "__leave", condition = function() return InputHandler:wasTriggered(Key.Q) end }
+--}

@@ -12,6 +12,9 @@ currentGrow = 0
 character_size = 20
 numberOfPlanets = 50
 
+
+
+
 -- Variablen 
 planetAmount = 2
 nearestPlanet = 1
@@ -214,9 +217,18 @@ function createPlanet(number, size, position)
 	-- planetArr[number].rc:setPath("data/models/space/nibiru_" .. size .. ".thModel")
 	planetArr[number].rc:setPath("data/models/planet_models/jupiter.thModel")
 	
+
+	planetArr[number].rc:setScale(Vec3(size/50 + .1, size/50 + .1, size/50 + .1))
+
 	planetArr[number].sc = planetArr[number].go:createScriptComponent()
 	planetArr[number].go:setComponentStates(ComponentState.Active)
 	planetArr[number].size = size
+
+
+	local planetVelocity = Vec3(math.random(-50, 50), 0, math.random(-50, 50))
+
+	--planetArr[number].rb:setLinearVelocity(planetVelocity)
+	planetArr[number].rb:applyForce(0.5, planetVelocity)
 	
 	--createGravityZone(number, size)
 	
@@ -230,8 +242,11 @@ function createGravityZone(number, size)
 end
 
 for j=1 , numberOfPlanets do
-    local position = Vec3(math.random(-WORLD_SIZE, WORLD_SIZE), math.random(-WORLD_SIZE, WORLD_SIZE), math.random(-WORLD_SIZE, WORLD_SIZE))
-	createPlanet(j, 50, position)
+    local position = Vec3(math.random(-WORLD_SIZE, WORLD_SIZE), 0, math.random(-WORLD_SIZE, WORLD_SIZE))
+	
+	local size = math.random(50, 500)
+	createPlanet(j, size, position)
+
 	-- planetArr[j].gz.go:setComponentStates(ComponentState.Aktive)
 end
 
@@ -290,7 +305,7 @@ function grow( i )
 
 	-- apply impulse
 	--character.go:setPosition(characterUpDirection:mulScalar(i *20))
-	homePlanetModel.rc:setScale(Vec3(i/5,i/5,i/5))
+	homePlanetModel.rc:setScale(Vec3(i/4 ,i/4,i/4))
 	print(homePlanetModel.rc)
 
 	--targetObject:setScale(Vec3(2,2,2))
