@@ -116,7 +116,7 @@ function updateCharacter(  )
 				-- homeplanetBody.rb:applyForce(0.5, characterUpDirection:mulScalar(-50000))
 				homeplanetBody.rb:setLinearVelocity(characterUpDirection:mulScalar(200))
 			else
-				if(acceleration<250)then
+				if(acceleration>-250)then
 					acceleration = acceleration - 6
 				end
 
@@ -136,7 +136,7 @@ function updateCharacter(  )
 		--end
 	end
 
-	if(acceleration<-20)then
+	if(acceleration<-2)then
 		acceleration = acceleration + 1
 	end
 	--characterUpDirection:mulScalar(acceleration)
@@ -204,13 +204,22 @@ function updatePlanet(planet)
 	-- homeplanetBody.rb:setLinearVelocity(grav + impulse)
 	
 	if(planet.go.isGone) then
-		local position = Vec3(math.random(-WORLD_SIZE, WORLD_SIZE), 0, math.random(-WORLD_SIZE, WORLD_SIZE))
-		planet.go:setPosition(position)
+		if(currentCollider.go.size>planet.go.size)then
+			print("planet collided : " .. tostring( planet.go.size))
+			print("homeplanet Size: " .. tostring( currentCollider.go.size))
+
+			if(growAim<maxSize)then
+				growAim = growAim + 1
+			end
+
+			local position = Vec3(math.random(-WORLD_SIZE, WORLD_SIZE), 0, math.random(-WORLD_SIZE, WORLD_SIZE))
+			planet.go:setPosition(position)
+			planet.go.isGone = false
+		end
 		
-		planet.go.isGone = false
 	end
 
-	local planetVelocity = Vec3(math.random(-5, 5), math.random(-5, 5), math.random(-5, 5))
+	--local planetVelocity = Vec3(math.random(-5, 5), math.random(-5, 5), math.random(-5, 5))
 
 	--planetArr[number].rb:setLinearVelocity(planetVelocity)
 	--planet.rb:applyForce(0.5, planetVelocity)

@@ -10,10 +10,11 @@ maxSize = 100
 growAim = 5
 currentGrow = 0
 character_size = 20
-numberOfPlanets = 50
+numberOfPlanets = 100
+numberOfSmallPlanets = 100
 
 
-
+currentCollider = nil
 
 -- Variablen 
 planetAmount = 2
@@ -41,6 +42,7 @@ function create_collisionSphere( size )
 	-- body
 	collisionSphere 				= 	{}
 	collisionSphere.go 			= 	GameObjectManager:createGameObject(nextGUID())
+	collisionSphere.go.size = size
 	collisionSphere.pc 			= 	collisionSphere.go:createPhysicsComponent()
 
 	local cinfo 			= 	RigidBodyCInfo()
@@ -63,9 +65,7 @@ function create_collisionSphere( size )
 		local planet = args:getRigidBody():getUserData()
 		print(planet.go:getName())
 
-		if(growAim<maxSize)then
-			growAim = growAim + 1
-		end
+		
 			if args:getEventType() == TriggerEventType.Entered then
 
 				planet.go.isGone = true
@@ -197,10 +197,13 @@ end
 
 function createPlanet(number, size, position)
 	planetArr[number] = {}
+	
+
 	planetArr[number].go = GameObjectManager:createGameObject("planetArr[" .. number .. "]")
 	planetArr[number].pc = planetArr[number].go:createPhysicsComponent()
 	planetArr[number].go.isGone = false
 	planetArr[number].go.isGravity = false
+	planetArr[number].go.size = size
 	local cinfo = RigidBodyCInfo()
 	cinfo.shape = PhysicsFactory:createSphere(size)
 	cinfo.motionType = MotionType.Dynamic
@@ -228,7 +231,7 @@ function createPlanet(number, size, position)
 	local planetVelocity = Vec3(math.random(-50, 50), 0, math.random(-50, 50))
 
 	--planetArr[number].rb:setLinearVelocity(planetVelocity)
-	planetArr[number].rb:applyForce(0.5, planetVelocity)
+	planetArr[number].rb:applyForce(1, planetVelocity)
 	
 	--createGravityZone(number, size)
 	
@@ -241,10 +244,18 @@ function createGravityZone(number, size)
 	create_GravitySphere(number, size * 5)
 end
 
-for j=1 , numberOfPlanets do
+for j=1 , numberOfSmallPlanets do
     local position = Vec3(math.random(-WORLD_SIZE, WORLD_SIZE), 0, math.random(-WORLD_SIZE, WORLD_SIZE))
 	
-	local size = math.random(50, 500)
+	local size = math.random(20, 30)
+	createPlanet(j, size, position)
+
+	-- planetArr[j].gz.go:setComponentStates(ComponentState.Aktive)
+end
+for j=numberOfSmallPlanets+1 , numberOfSmallPlanets do
+    local position = Vec3(math.random(-WORLD_SIZE, WORLD_SIZE), 0, math.random(-WORLD_SIZE, WORLD_SIZE))
+	
+	local size = math.random(20, 30)
 	createPlanet(j, size, position)
 
 	-- planetArr[j].gz.go:setComponentStates(ComponentState.Aktive)
@@ -313,7 +324,7 @@ function grow( i )
 		
 		collisionSpheres[k].go:setComponentStates(ComponentState.Inactive)
 		if(k==i)then
-			
+			currentCollider = collisionSpheres[k]
 			collisionSpheres[k].go:setComponentStates(ComponentState.Active)
 		end
 
