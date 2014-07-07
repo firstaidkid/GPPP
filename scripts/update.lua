@@ -37,7 +37,7 @@ function defaultUpdate(updateData)
 	
 	planetUpdate(elapsedTime)
 	updateCharacter(elapsedTime)
-	--updateLevel(elapsedTime)
+	-- updateLevel(elapsedTime)
 	for i=1 , numberOfPlanets do
 		updatePlanet(i, elapsedTime)
 	end
@@ -178,27 +178,27 @@ function updatePlanet(number, elapsedTime)
 	-- homeplanetBody.rb:setLinearVelocity(grav + impulse)
 	local planet = planetArr[number]
 	local gz = gravityZone[number]
-	if(gz.go.inGravity) then
-		--include Gravity
-		local impulse = Vec3(0,0,0)
-		local PlanetPosition = planet.go:getWorldPosition()
-		local homeWorldPosition = homeplanetBody.go:getWorldPosition()
-		local gravPlanet = PlanetPosition - homeWorldPosition
+	-- if(gz.go.inGravity) then
+		-- include Gravity
+		-- local impulse = Vec3(0,0,0)
+		-- local PlanetPosition = planet.go:getWorldPosition()
+		-- local homeWorldPosition = homeplanetBody.go:getWorldPosition()
+		-- local gravPlanet = PlanetPosition - homeWorldPosition
 		
-		gravity = inGravityZone(planet)
-		if(gravity > 0) then
-			impulse = (impulse + gravPlanet):mulScalar(0.000009 * gravity * elapsedTime * 100)
-		end
-		local grav = homeplanetBody.rb:getLinearVelocity()
-		homeplanetBody.rb:setLinearVelocity(grav + impulse)
+		-- gravity = inGravityZone(planet)
+		-- if(gravity > 0) then
+			-- impulse = (impulse + gravPlanet):mulScalar(0.000009 * gravity * elapsedTime * 100)
+		-- end
+		-- local grav = homeplanetBody.rb:getLinearVelocity()
+		-- homeplanetBody.rb:setLinearVelocity(grav + impulse)
 		
 		if(planet.go.isGone) then
 		planet.go:setPosition(Vec3(math.random(-1000, 1000),math.random(-1000, 1000),math.random(-1000, 1000)))
-		gz.go:setPosition(planet.go:getPosition())
+		-- gz.go:setPosition(planet.go:getPosition())
 		planet.go.isGone = false
-		gz.go.inGravity = false
+		-- gz.go.inGravity = false
 		end
-	end
+	-- end
 end
 
 function planetUpdate( updateData )

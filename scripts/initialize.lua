@@ -19,6 +19,7 @@ nearestPlanet = 1
 planetArr = {}
 gravityZone = {}
 homeWorldSize = 200
+colSpSize = 400
 
 
 local serpent = require("data/scripts/serpent")
@@ -115,6 +116,60 @@ function create_GravitySphere(number, size)
 	--gravityZone[number].go:setParent(planetArr[number].go)
 end
 
+function create_CollisionCheckSphere(size)
+	-- body
+	colCheckSphere 				= 	{}
+
+	colCheckSphere.go 			= 	GameObjectManager:createGameObject(nextGUID())
+	colCheckSphere.pc 			= 	colCheckSphere.go:createPhysicsComponent()
+
+	local cinfo 			= 	RigidBodyCInfo()
+	cinfo.position 			= 	Vec3(0,0,0)
+	cinfo.shape 			= 	PhysicsFactory:createSphere(size)
+	cinfo.motionType 		= 	MotionType.Keyframed
+	cinfo.restitution 		= 	0
+	cinfo.friction 			= 	0
+	cinfo.gravityFactor 	= 	0
+	cinfo.mass 				= 	900000
+	cinfo.maxLinearVelocity = 	10000
+	cinfo.collisionFilterInfo = 0xff1f
+	cinfo.isTriggerVolume = true
+	colCheckSphere.rb 			= 	colCheckSphere.pc:createRigidBody(cinfo)
+	
+	-- stores the table inside the rigidbody
+	colCheckSphere.rb:setUserData(colCheckSphere)
+
+	colCheckSphere.rb:getTriggerEvent():registerListener(function(args)
+		local planet = args:getRigidBody():getUserData()
+				
+		if args:getEventType() == TriggerEventType.Entered then
+			local name4 = planet.go:getName():sub(1,4)
+			if(name4 == "plan") then
+				if(growAim<maxSize)then
+					growAim = growAim + 1
+				end
+				planet.go.isGone = true
+				homeplanetBody.go.setColor = false
+			elseif(planet.go:getName():sub(1,4) == "grav") then
+				print("in")
+				planet.go.inGravity = true
+				homeplanetBody.go.setColor = true
+			end
+		elseif args:getEventType() == TriggerEventType.Left then
+			if(planet.go:getName():sub(1,4) == "grav") then
+				print("out")
+				planet.go.inGravity = false
+				homeplanetBody.go.setColor = false
+			end
+		end
+		return EventResult.Handled
+	end)
+	colCheckSphere.go:setParent(homeplanetBody.go)
+	
+	return colCheckSphere
+
+end
+
 guid = 0
 function nextGUID()
 	local guid_string = tostring(guid)
@@ -203,6 +258,8 @@ do	-- Character
 	
 	character.go:setComponentStates(ComponentState.Active)
 	
+	--## create CollisionCheckSphere
+	create_CollisionCheckSphere(colSpSize)
 end
 
 function createPlanet(number, size, position)
@@ -212,7 +269,7 @@ function createPlanet(number, size, position)
 	planetArr[number].go.isGone = false
 	local cinfo = RigidBodyCInfo()
 	cinfo.shape = PhysicsFactory:createSphere(size)
-	cinfo.motionType = MotionType.Keyframed
+	cinfo.motionType = MotionType.Dynamic
 	cinfo.position = position
 	cinfo.mass = 2
 	cinfo.gravityFactor = 0
@@ -230,6 +287,7 @@ function createPlanet(number, size, position)
 	planetArr[number].go:setComponentStates(ComponentState.Active)
 	planetArr[number].size = size
 	
+	--## create GravityZone around Planet
 	createGravityZone(number, size)
 	
 	--GravityZone
