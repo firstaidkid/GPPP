@@ -11,7 +11,7 @@ growAim = 5
 currentGrow = 0
 character_size = 20
 numberOfPlanets = 50
-gravityZoneMultiSize = 10
+gravityZoneMultiSize = 5
 
 -- Variablen 
 planetAmount = 2
@@ -176,9 +176,9 @@ do	-- Character
 	character.go = GameObjectManager:createGameObject("character")
 
 	--character.sc = character.go:createScriptComponent()
-	local renderComponent = character.go:createRenderComponent()
+	character.rc = character.go:createRenderComponent()
 	
-	renderComponent:setPath("data/models/roboter/robot2.thModel")
+	character.rc:setPath("data/models/roboter/robot2.thModel")
 	
 	-- #Animations
 	character.ac = character.go:createAnimationComponent()
@@ -191,13 +191,15 @@ do	-- Character
 	character.activeIdle = 0 -- no Idle
 	
 	-- set Walk
-	character.ac:addAnimationFile("Walk", "data/models/roboter/robot_walk.hkt")
+	character.ac:addAnimationFile("Walk", "data/models/roboter/robot_walk3.hkt")
 	--character.ac:setPlaybackSpeed("Walk", 1)
 	
 	-- set Attack
 	character.attacks = { "Attack", "Attack2" }
-	character.ac:addAnimationFile(character.attacks[1], "data/models/roboter/robot_shot.hkt")
+	character.ac:addAnimationFile(character.attacks[1], "data/models/roboter/robot_shot2.hkt")
 	character.activeAttack = 0 -- no attack
+	
+	character.rc:setScale(Vec3(1.5,1.5,1.5))
 	
 	character.go:setComponentStates(ComponentState.Active)
 	
@@ -210,7 +212,7 @@ function createPlanet(number, size, position)
 	planetArr[number].go.isGone = false
 	local cinfo = RigidBodyCInfo()
 	cinfo.shape = PhysicsFactory:createSphere(size)
-	cinfo.motionType = MotionType.Dynamic
+	cinfo.motionType = MotionType.Keyframed
 	cinfo.position = position
 	cinfo.mass = 2
 	cinfo.gravityFactor = 0
@@ -223,7 +225,7 @@ function createPlanet(number, size, position)
 	planetArr[number].rc = planetArr[number].go:createRenderComponent()
 	-- planetArr[number].rc:setPath("data/models/space/nibiru_" .. size .. ".thModel")
 	planetArr[number].rc:setPath("data/models/planet_models/jupiter.thModel")
-	
+	planetArr[number].rc:setScale(Vec3(size/50,size/50,size/50))
 	--planetArr[number].sc = planetArr[number].go:createScriptComponent()
 	planetArr[number].go:setComponentStates(ComponentState.Active)
 	planetArr[number].size = size
@@ -241,7 +243,7 @@ end
 
 for j=1 , numberOfPlanets do
     local position = Vec3(math.random(-WORLD_SIZE, WORLD_SIZE), math.random(-WORLD_SIZE, WORLD_SIZE), math.random(-WORLD_SIZE, WORLD_SIZE))
-	createPlanet(j, 50, position)
+	createPlanet(j, math.random(50, 200), position)
 	-- planetArr[j].gz.go:setComponentStates(ComponentState.Aktive)
 end
 

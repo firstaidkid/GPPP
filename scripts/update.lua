@@ -20,7 +20,7 @@ function characterEnter()
 	character.ac:easeOut(character.attacks[1], 0.0)	
 	character.ac:setBoneDebugDrawingEnabled(true)
 	
-	character.ac:setPlaybackSpeed("Walk", 3)
+	character.ac:setPlaybackSpeed("Walk", 1)
 end
 
 
