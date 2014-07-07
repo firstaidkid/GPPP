@@ -46,7 +46,7 @@ function defaultUpdate(updateData)
 		updatePlanet(planetArr[i])
 	end
 	
-	updateShortDistance()
+	--updateShortDistance()
 
 
 	return EventResult.Handled
@@ -145,6 +145,12 @@ function updateCharacter(  )
 
 	-- Model verfolgt HauptPlanet
 	homePlanetModel.go:setPosition(homeplanetBody.go:getWorldPosition())
+
+
+
+	bgOffset = homeplanetBody.go:getWorldPosition()
+	bg.go:setPosition(Vec3(bgOffset.x, 3000, bgOffset.z - 6000 ))
+
 end
 
 function getShortDistance()
@@ -202,6 +208,21 @@ function updatePlanet(planet)
 	-- Kraft auf den Planeten
 	-- local grav = homeplanetBody.rb:getLinearVelocity()
 	-- homeplanetBody.rb:setLinearVelocity(grav + impulse)
+	
+
+	pos = planet.go:getWorldPosition()
+
+	if(math.abs(pos.x) > REAL_WORLD_SIZE)then
+		print("reposition planet")
+		local position = Vec3(0, 0, 0)
+		planet.go:setPosition(position)
+
+	end
+
+
+	--print("position: " .. pos.x .. ", " .. pos.z)
+
+
 	
 	if(planet.go.isGone) then
 		if(currentCollider.go.size>planet.go.size)then
