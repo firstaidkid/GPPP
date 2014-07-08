@@ -27,7 +27,7 @@ function characterEnter()
 	
 	-- set Vision to normal Direction
 	quaternion = Quaternion(character.go:getUpDirection(), 90)
-	homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
+	character.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
 	
 	character.ac:setPlaybackSpeed("Walk", 3)
 end
@@ -59,7 +59,6 @@ function defaultUpdate(updateData)
 	for i=1 , #checkArray do
 		local planetNumber = checkArray[i]
 		local forceFromPlanet = gravForce(planetNumber)
-		print(tonumber(forceFromPlanet))
 		planetArr[planetNumber].rb:setLinearVelocity(forceFromPlanet:mulScalar(elapsedTime * -1 / 10000) + planetArr[planetNumber].rb:getLinearVelocity())
 		force = force + forceFromPlanet
 	end
@@ -74,8 +73,7 @@ end
 function updateCharacter( elapsedTime )
 
 
-	-- timer = timer + elapsedTime*1000
-	timer = timer + elapsedTime*100
+	timer = timer + elapsedTime*1000
 	roundTimer = round(timer,0)
 	
 	local realTime = elapsedTime * 100
@@ -256,7 +254,6 @@ function getShortDistance()
 	
 	--update all planets in checkArray
 	for i=1 , #checkArray do
-		print(planetArr[checkArray[i]])
 		-- print(planetArr[checkArray[i]])
 		local planet = planetArr[checkArray[i]]
 		

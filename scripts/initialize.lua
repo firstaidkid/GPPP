@@ -25,10 +25,6 @@ checkArray = {}
 nearestPlanet = nil
 planetArr = {}
 
-nearestPlanet = 1
-planetArr = {}
-
-
 -- sound banks
 SoundSystem:loadLibrary(".\\data\\sound\\Master Bank.bank")
 SoundSystem:loadLibrary(".\\data\\sound\\Master Bank.bank.strings")
@@ -147,7 +143,6 @@ function create_collisionSphere( size )
 
 	collisionSphere.rb:getTriggerEvent():registerListener(function(args)
 		local planet = args:getRigidBody():getUserData()
-		print(planet.go:getName())
 
 		
 			if args:getEventType() == TriggerEventType.Entered then
