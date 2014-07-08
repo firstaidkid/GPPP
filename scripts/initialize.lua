@@ -15,6 +15,7 @@ numberOfPlanets = 100
 numberOfSmallPlanets = 50
 numberOfMidPlanets = 50
 numberOfBigPlanets = 10
+massPerSize = 1000
 
 -- size of CollisionCheckSphere
 colSpSize = 500
@@ -68,11 +69,13 @@ function create_collisionSphere( size )
 	cinfo.restitution 		= 	0
 	cinfo.friction 			= 	0
 	cinfo.gravityFactor 	= 	0
-	cinfo.mass 				= 	900000
+	cinfo.mass 				= 	size * massPerSize
 	cinfo.maxLinearVelocity = 	10000
 	cinfo.collisionFilterInfo = 0xff1f
 	cinfo.isTriggerVolume = true
 	collisionSphere.rb 			= 	collisionSphere.pc:createRigidBody(cinfo)
+	
+	collisionSphere.go.mass = size * massPerSize
 	
 	-- stores the table inside the rigidbody
 	collisionSphere.rb:setUserData(collisionSphere)
@@ -109,7 +112,7 @@ function create_GravitySphere(number, size)
 	cinfo.motionType 		= 	MotionType.Dynamic
 	cinfo.friction 			= 	0
 	cinfo.gravityFactor 	= 	0
-	cinfo.mass 				= 	900000
+	cinfo.mass 				= 	size * massPerSize
 	cinfo.maxLinearVelocity = 	100000000
 	cinfo.collisionFilterInfo = 0xff1f
 	gravityZone[number].rb 			= 	gravityZone[number].pc:createRigidBody(cinfo)
@@ -138,7 +141,7 @@ function create_CollisionCheckSphere(size)
 	cinfo.restitution 		= 	0
 	cinfo.friction 			= 	0
 	cinfo.gravityFactor 	= 	0
-	cinfo.mass 				= 	900000
+	cinfo.mass 				= 	size * massPerSize
 	cinfo.maxLinearVelocity = 	10000
 	cinfo.collisionFilterInfo = 0xff1f
 	cinfo.isTriggerVolume = true
@@ -201,7 +204,7 @@ do -- homeWorld
 	cinfo.restitution 		= 0
 	cinfo.friction 			= 0
 	cinfo.gravityFactor 	= 0
-	cinfo.mass 				= 900000
+	cinfo.mass 				= 20 * massPerSize
 	cinfo.maxLinearVelocity = 400
 
 
@@ -223,7 +226,7 @@ do -- homeWorldModel
 	cinfo.restitution 		= 0
 	cinfo.friction 			= 0
 	cinfo.gravityFactor 	= 0
-	cinfo.mass 				= 900000
+	cinfo.mass 				= 20 * massPerSize
 	cinfo.maxLinearVelocity = 400
 
 
@@ -353,11 +356,12 @@ function createPlanet(number, size, position)
 	planetArr[number].go.isGone = false
 	planetArr[number].go.isGravity = false
 	planetArr[number].go.size = size
+	planetArr[number].go.mass = size * massPerSize
 	local cinfo = RigidBodyCInfo()
 	cinfo.shape = PhysicsFactory:createSphere(size)
 	cinfo.motionType = MotionType.Dynamic
 	cinfo.position = position
-	cinfo.mass = 2
+	cinfo.mass = size * massPerSize
 	cinfo.gravityFactor = 0
 	cinfo.maxLinearVelocity = 	100000000
 	cinfo.collisionFilterInfo = 0xff1f

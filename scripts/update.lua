@@ -41,16 +41,22 @@ end
 
 function defaultUpdate(updateData)
 	local elapsedTime = updateData:getElapsedTime()
-	
+	local force = Vec3(0,0,0)
+	local forceFromPlanet = Vec3(0,0,0)
 
 	updateCharacter(elapsedTime)
 	planetUpdate(elapsedTime)
 
 	--update all planets in checkArray
 	for i=1 , #checkArray do
-		updatePlanet(checkArray[i], elapsedTime)
+		local planetNumber = checkArray[i]
+		local forceFromPlanet = updatePlanet(planetNumber, elapsedTime)
+		print(tonumber(forceFromPlanet))
+		planetArr[planetNumber].rb:setLinearVelocity(forceFromPlanet:mulScalar(elapsedTime * -1 / 10000) + planetArr[planetNumber].rb:getLinearVelocity())
+		force = force + forceFromPlanet
 	end
-	
+	homeplanetBody.rb:setLinearVelocity(force:mulScalar(elapsedTime / 20000) + homeplanetBody.rb:getLinearVelocity())
+	DebugRenderer:printText(Vec2(-0.7, 0.3), "  Gravity Strenght: " .. tostring(math.sqrt(force.x*force.x+force.y*force.y*force.z*force.z)))
 	updateShortDistance()
 
 
@@ -121,7 +127,7 @@ function updateCharacter(elapsedTime)
 			if (InputHandler:isPressed(Key.Shift)) then
 				
 				-- homeplanetBody.rb:applyForce(0.5, characterUpDirection:mulScalar(-50000))
-				homeplanetBody.rb:setLinearVelocity(characterUpDirection:mulScalar(200))
+				homeplanetBody.rb:setLinearVelocity(characterUpDirection:mulScalar(200) * realTime + homeplanetBody.rb:getLinearVelocity())
 			else
 				if(acceleration>-250)then
 					acceleration = acceleration - 6
@@ -147,7 +153,7 @@ function updateCharacter(elapsedTime)
 		acceleration = acceleration + 1
 	end
 	--characterUpDirection:mulScalar(acceleration)
-	homeplanetBody.rb:setLinearVelocity(velocityDirection)
+	homeplanetBody.rb:setLinearVelocity(velocityDirection:mulScalar(realTime / 100) + homeplanetBody.rb:getLinearVelocity())
 	impulse = impulse + (homeplanetBody.go:getWorldPosition() - character.go:getWorldPosition()):mulScalar(10 * realTime)
 
 	-- Model verfolgt HauptPlanet
@@ -157,7 +163,27 @@ function updateCharacter(elapsedTime)
 
 	bgOffset = homeplanetBody.go:getWorldPosition()
 	bg.go:setPosition(Vec3(bgOffset.x, 3000, bgOffset.z - 6000 ))
+	
+end
 
+function gravForce(number)
+	-- Fg = G * m1 * m2 / r²
+	local G = 6.67 / 1000
+	local m1 = planetArr[number].go.mass
+	local m2 = collisionSpheres[currentGrow].go.mass
+	
+	local positionHP = homeplanetBody.go:getWorldPosition()
+	local positionPlanet = planetArr[number].go:getWorldPosition()
+	local fDirection = positionPlanet - positionHP
+	quad_r = fDirection.x*fDirection.x+fDirection.y*fDirection.y + fDirection.z*fDirection.z
+	
+	local force = G * m1 * m2 / quad_r
+	
+	-- Draw Gravity To
+	DebugRenderer:drawArrow(positionHP, positionPlanet , Color(1, 0, 1, 1))
+	
+	
+	return fDirection:mulScalar(force)
 end
 
 function getShortDistance()
@@ -214,11 +240,11 @@ function updateShortDistance()
 		if(homeplanetBody.go.setColor) then
 			DebugRenderer:drawArrow(homeplanetBody.go:getWorldPosition(), planetArr[nearestPlanet].go:getWorldPosition() , Color(1, 0, 1, 1))
 		else
-			DebugRenderer:drawArrow(homeplanetBody.go:getWorldPosition(), planetArr[nearestPlanet].go:getWorldPosition())
+			--green
+			DebugRenderer:drawArrow(homeplanetBody.go:getWorldPosition(), planetArr[nearestPlanet].go:getWorldPosition() , Color(0, 1, 0, 1))
 		end
 	end
 end
-
 
 function updatePlanet(number, elapsedTime)
 	
@@ -259,6 +285,8 @@ function updatePlanet(number, elapsedTime)
 	--planetArr[number].rb:setLinearVelocity(planetVelocity)
 	--planet.rb:applyForce(0.5, planetVelocity)
 
+	local force = gravForce(number)
+	return force
 
 end
 
