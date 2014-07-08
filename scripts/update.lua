@@ -3,6 +3,8 @@ print("running updates")
 local acceleration = 0
 local velocityDirection = Vec3(0, 0, 0)
 
+local timer = 0
+
 function homePlanetEnter()
 
 	-- ## for Animations + Skaling
@@ -40,17 +42,23 @@ function defaultEnter(enterData)
 end
 
 function defaultUpdate(updateData)
+	-- local elapsedTime = updateData:getElapsedTime() / 1000.0
 	local elapsedTime = updateData:getElapsedTime()
+	
 	local force = Vec3(0,0,0)
 	local forceFromPlanet = Vec3(0,0,0)
 
 	updateCharacter(elapsedTime)
+	--updateLevel(elapsedTime)
 	planetUpdate(elapsedTime)
-
+	for i=1 , #planetArr do
+		updatePlanet(planetArr[i])
+	end
+	
 	--update all planets in checkArray
 	for i=1 , #checkArray do
 		local planetNumber = checkArray[i]
-		local forceFromPlanet = updatePlanet(planetNumber, elapsedTime)
+		local forceFromPlanet = gravForce(planetNumber)
 		print(tonumber(forceFromPlanet))
 		planetArr[planetNumber].rb:setLinearVelocity(forceFromPlanet:mulScalar(elapsedTime * -1 / 10000) + planetArr[planetNumber].rb:getLinearVelocity())
 		force = force + forceFromPlanet
@@ -59,17 +67,51 @@ function defaultUpdate(updateData)
 	DebugRenderer:printText(Vec2(-0.7, 0.3), "  Gravity Strenght: " .. tostring(math.sqrt(force.x*force.x+force.y*force.y*force.z*force.z)))
 	updateShortDistance()
 
-
 	return EventResult.Handled
 end
 
 
-function updateCharacter(elapsedTime)
+function updateCharacter( elapsedTime )
 
+
+	-- timer = timer + elapsedTime*1000
+	timer = timer + elapsedTime*100
+	roundTimer = round(timer,0)
+	
 	local realTime = elapsedTime * 100
 
+	--if(roundTimer % 15 == 0) then
+		--	homeplanetBody.ambience:stop()
+		--	homeplanetBody.ambience:play()
 
-	DebugRenderer:printText(Vec2(-0.5, 0.25), "  acceleration: " .. tostring(acceleration))
+	--end
+
+
+	DebugRenderer:printText(Vec2(-0.99, 0.7), "time: " .. tostring(roundTimer))
+
+	character.ac:setBoneDebugDrawingEnabled(false)
+	DebugRenderer:printText(Vec2(-0.99, 0.6), "acceleration: " .. tostring(acceleration))
+
+	--DebugRenderer:printText3D(Vec3(0,-600,100), "Text3D colored!", Color(0,0,1,1))
+
+	if(gameover)then
+		textPos = debugCam.cc:getWorldPosition()
+		textPos.y = textPos.y + 100
+		textPos.z = textPos.z + 10
+		DebugRenderer:printText3D(textPos, "You destroyed your planet")
+		textPos.z = textPos.z - 10
+		textPos.y = textPos.y + 30
+		DebugRenderer:printText3D(textPos, "Your Score: " .. score)
+
+		
+		textPos.z = textPos.z - 20
+		DebugRenderer:printText3D(textPos, "Press 'R' to restart")
+	end
+
+
+	DebugRenderer:printText(Vec2(-.99,.8), "Score: " .. score)
+
+
 
 	local impulse = Vec3(0,0,0)
  	local characterUpDirection = character.go:getUpDirection()
@@ -83,7 +125,7 @@ function updateCharacter(elapsedTime)
 	end
 
 	
-	if(InputHandler:isPressed(Key.S) or InputHandler:isPressed(Key.W)) then
+	if(InputHandler:isPressed(Key.A) or InputHandler:isPressed(Key.D)) then
 		character.ac:easeIn("Walk", 0.0)
 		character.ac:easeOut(character.idles[1], 0.0)
 	else
@@ -108,6 +150,14 @@ function updateCharacter(elapsedTime)
 		--quaternion = Quaternion(characterUpDirection, -3)
 		--homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
 	end
+
+	if(InputHandler:isPressed(Key.R)) then
+		--Restart game
+		Restart()
+	end
+
+
+
 	if(InputHandler:isPressed(Key.Q) or InputHandler:isPressed(Key.A) or InputHandler:isPressed(Key.Left)) then
 		quaternion = Quaternion(characterRightDirection, -2 * realTime)
 		homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
@@ -127,19 +177,31 @@ function updateCharacter(elapsedTime)
 			if (InputHandler:isPressed(Key.Shift)) then
 				
 				-- homeplanetBody.rb:applyForce(0.5, characterUpDirection:mulScalar(-50000))
-				homeplanetBody.rb:setLinearVelocity(characterUpDirection:mulScalar(200) * realTime + homeplanetBody.rb:getLinearVelocity())
+				homeplanetBody.rb:setLinearVelocity(characterUpDirection:mulScalar(200))
 			else
+				planetUpdirection = homeplanetBody.go:getUpDirection()
+				spawnDebris(homeplanetBody.go:getWorldPosition(), planetUpdirection)
+
+				if(growAim>minSize)then
+					--growAim = growAim - .1
+				end
+
 				if(acceleration>-250)then
 					acceleration = acceleration - 6
 				end
 
 				velocityDirection = characterUpDirection:mulScalar(acceleration)
 
-				
+				homeplanetBody.rb:applyForce(1, characterUpDirection:mulScalar(acceleration))				
 				-- homeplanetBody.rb:applyForce(0.5, characterUpDirection:mulScalar(-10000))
 				
 			end
+		else
+			if(acceleration<-2)then
+				acceleration = acceleration + 6
+			end		
 		end
+
 	else
 		--local localTimeNormalized = character.ac:getLocalTimeNormalized(character.attacks[1])
 		--if (localTimeNormalized > 0.75) then
@@ -149,12 +211,11 @@ function updateCharacter(elapsedTime)
 		--end
 	end
 
-	if(acceleration<-2)then
-		acceleration = acceleration + 1
-	end
+	
 	--characterUpDirection:mulScalar(acceleration)
-	homeplanetBody.rb:setLinearVelocity(velocityDirection:mulScalar(realTime / 100) + homeplanetBody.rb:getLinearVelocity())
-	impulse = impulse + (homeplanetBody.go:getWorldPosition() - character.go:getWorldPosition()):mulScalar(10 * realTime)
+	--homeplanetBody.rb:setLinearVelocity(velocityDirection)
+
+	impulse = impulse + (homeplanetBody.go:getWorldPosition() - character.go:getWorldPosition()):mulScalar(10)
 
 	-- Model verfolgt HauptPlanet
 	homePlanetModel.go:setPosition(homeplanetBody.go:getWorldPosition())
@@ -163,7 +224,7 @@ function updateCharacter(elapsedTime)
 
 	bgOffset = homeplanetBody.go:getWorldPosition()
 	bg.go:setPosition(Vec3(bgOffset.x, 3000, bgOffset.z - 6000 ))
-	
+
 end
 
 function gravForce(number)
@@ -192,15 +253,6 @@ function getShortDistance()
 	local sDistance = 999999999
 	local check = 0
 	local positionHP = homeplanetBody.go:getWorldPosition()
-	-- for i = 2, numberOfPlanets do
-		-- vec = (positionHP - planetArr[i].go:getWorldPosition())
-		-- tempDistance = vec.x*vec.x+vec.y*vec.y+vec.z*vec.z
-		-- if (sDistance > tempDistance) then
-			-- sDistance = tempDistance
-			-- nearestPlanet = i
-			-- check = 1
-		-- end
-	-- end
 	
 	--update all planets in checkArray
 	for i=1 , #checkArray do
@@ -237,27 +289,72 @@ function updateShortDistance()
 	
 	
 	if(nearestPlanet ~= nil) then
-		if(homeplanetBody.go.setColor) then
-			DebugRenderer:drawArrow(homeplanetBody.go:getWorldPosition(), planetArr[nearestPlanet].go:getWorldPosition() , Color(1, 0, 1, 1))
-		else
-			--green
-			DebugRenderer:drawArrow(homeplanetBody.go:getWorldPosition(), planetArr[nearestPlanet].go:getWorldPosition() , Color(0, 1, 0, 1))
-		end
+		--green
+		DebugRenderer:drawArrow(homeplanetBody.go:getWorldPosition(), planetArr[nearestPlanet].go:getWorldPosition() , Color(0, 1, 0, 1))
 	end
 end
 
-function updatePlanet(number, elapsedTime)
+
+function updatePlanet(planet)
+	-- local impulse = Vec3(0,0,0)
+	-- local acceleration = 5
+	-- local PlanetPosition = planet.go:getWorldPosition()
+	-- local homeWorldPosition = homeplanetBody.go:getWorldPosition()
+	-- local gravPlanet = (PlanetPosition - homeWorldPosition):mulScalar(1)
 	
-	local planet = planetArr[number]
+	-- Gravity to Planet
+	-- gravity = inGravityZone(planet)
+	-- if(gravity > 0) then
+		-- impulse = (impulse + gravPlanet):mulScalar(0.0000009 * gravity)
+	-- end
+	
+	-- Kraft auf den Planeten
+	-- local grav = homeplanetBody.rb:getLinearVelocity()
+	-- homeplanetBody.rb:setLinearVelocity(grav + impulse)
+	
 
 	pos = planet.go:getWorldPosition()
 
 	if(math.abs(pos.x) > REAL_WORLD_SIZE)then
 		print("reposition planet")
-		local position = Vec3(0, 0, 0)
+		local position = Vec3(math.random(-WORLD_SIZE, WORLD_SIZE), 0, math.random(-WORLD_SIZE, WORLD_SIZE))
+	
 		planet.go:setPosition(position)
 
 	end
+
+
+
+
+
+	planet.go:setPosition(Vec3(pos.x, 0, pos.z))
+	homepos = homeplanetBody.go:getWorldPosition()
+	if(math.abs(pos.x - homepos.x)>1500 )then
+		spawnPoint = 0
+		spawnFlag = math.random(0,1)
+		if(spawnFlag==1)then
+			spawnPoint = -1000 
+		else
+			spawnPoint = 1000
+		end
+		 
+		planet.go:setPosition(Vec3(homepos.x + spawnPoint, 0, homepos.z + math.random(-600, 600)))
+	
+	end
+
+	if(math.abs(pos.z - homepos.z)>1000 )then
+		spawnPoint = 0
+		spawnFlag = math.random(0,1)
+		if(spawnFlag==1)then
+			spawnPoint = -600 
+		else
+			spawnPoint = 600
+		end
+		 
+		planet.go:setPosition(Vec3(homepos.x + math.random(-1000, 1000), 0, homepos.z + spawnPoint))
+	
+	end
+	
 
 
 	--print("position: " .. pos.x .. ", " .. pos.z)
@@ -265,18 +362,29 @@ function updatePlanet(number, elapsedTime)
 
 	
 	if(planet.go.isGone) then
-		if(currentCollider.go.size>planet.go.size)then
-			print("planet collided : " .. tostring( planet.go.size))
-			print("homeplanet Size: " .. tostring( currentCollider.go.size))
+		print("planet collided : " .. tostring( planet.go.size))
+		print("homeplanet Size: " .. tostring( currentCollider.go.size))
 
-			if(growAim<maxSize)then
-				growAim = growAim + 1
-			end
+
+
+		if(currentCollider.go.size>planet.go.size)then
+			
+			homeplanetBody.collisionSound:stop()
+			homeplanetBody.collisionSound:play()
+
+			addPoint(planet.go.size)
+
+			
 
 			local position = Vec3(math.random(-WORLD_SIZE, WORLD_SIZE), 0, math.random(-WORLD_SIZE, WORLD_SIZE))
 			planet.go:setPosition(position)
-			planet.go.isGone = false
+			
+		else
+			gameOver()
+			homeplanetBody.explosionSound:stop()
+			homeplanetBody.explosionSound:play()
 		end
+		planet.go.isGone = false
 		
 	end
 
@@ -285,8 +393,6 @@ function updatePlanet(number, elapsedTime)
 	--planetArr[number].rb:setLinearVelocity(planetVelocity)
 	--planet.rb:applyForce(0.5, planetVelocity)
 
-	local force = gravForce(number)
-	return force
 
 end
 
@@ -295,46 +401,22 @@ function planetUpdate( updateData )
 
 
 	if(InputHandler:isPressed(Key._1)) then
-		growAim = 10
+		if(growAim>minSize) then
+
+			growAim = growAim -1
+		end
+		
 	elseif(InputHandler:isPressed(Key._2)) then
-		growAim = 20
-	elseif(InputHandler:isPressed(Key._3)) then
-		growAim = 30
-	elseif(InputHandler:isPressed(Key._4)) then
-		growAim = 40
-	elseif(InputHandler:isPressed(Key._5)) then
-		growAim = 50
-	elseif(InputHandler:isPressed(Key._6)) then
-		growAim = 60
-	elseif(InputHandler:isPressed(Key._7)) then
-		growAim = 70
-	elseif(InputHandler:isPressed(Key._8)) then
-		growAim = 80
-	elseif(InputHandler:isPressed(Key._9)) then
-		growAim = 90
+		if(growAim<maxSize) then
+
+			growAim = growAim +1
+		end
+
 	end
 
 
 	return EventResult.Handled
 end
-
--- Collision Detection in Gravity Sphere return a Value of the Power
--- the return value make a smoothy gravity
-function inGravityZone(planet)
-	-- x²+y²+z² < r1²+r2²+2*r1*r2
-	local gravityHomePlanet = (homeplanetBody.go:getWorldPosition() - planet.go:getWorldPosition())
-	-- x²+y²+z² 
-	local quadDistance = gravityHomePlanet.x * gravityHomePlanet.x + gravityHomePlanet.y * gravityHomePlanet.y + gravityHomePlanet.z * gravityHomePlanet.z
-	-- r1²+r2²+2*r1*r2  -------- RadiusPlanet = 100 RadiusHomePlanet = 50
-	local planetSize = planet.size * 2;
-	local radiusDistance = homeWorldSize*homeWorldSize + planetSize*planetSize + 2*homeWorldSize*planetSize
-	if(quadDistance < radiusDistance) then
-		return radiusDistance - quadDistance
-	else
-		return 0
-	end
-end
-
 
 --
 -- Debug CAM
@@ -357,10 +439,15 @@ function debugCamUpdate(updateData)
 	
 	--DebugRenderer:printText(Vec2(-0.9, 0.85), "debugCamUpdate")
 
+	target = homeplanetBody.go:getWorldPosition()
+
 	local mouseDelta = InputHandler:getMouseDelta()
 	local rotationSpeed = 0.2 * updateData:getElapsedTime()
 	local lookVec = mouseDelta:mulScalar(rotationSpeed)
-	debugCam.cc:look(lookVec)
+	
+	debugCam.cc:setPosition(Vec3(target.x,  -(700.0 +currentGrow), target.z))
+	--debugCam.cc:look(lookVec)
+	debugCam.cc:lookAt(target)
 	
 	local moveVec = Vec3(0.0, 0.0, 0.0)
 	local moveSpeed = 0.5 * updateData:getElapsedTime()
@@ -497,15 +584,15 @@ function normalCamIsometricUpdate(updateData)
  --	logMessage("[camera x=" .. round(camera.x, 1) .. ", y=" .. round(camera.y, 1) .. ", z=" .. round(camera.z, 1) .. "]")
 --	logMessage("[planet x=" .. round(middle.x, 1) .. ", y=" .. round(middle.y, 1) .. ", z=" .. round(middle.z, 1) .. homeWorldSize .. "]")
 
-	local behind = isBehindPlanet(character.go:getWorldPosition(), normalCam.isometric.cc:getWorldPosition(), homeplanetBody.go:getWorldPosition(), homeWorldSize)
+	--local behind = isBehindPlanet(character.go:getWorldPosition(), normalCam.isometric.cc:getWorldPosition(), homeplanetBody.go:getWorldPosition(), homeWorldSize)
 
-	if(not (behind == homeplanetBody.wasPreviouslyBehind)) then
-		if(behind) then
-				homePlanetModel.rc:updatePath("data/models/space/nibiru_50_mario.thModel") 
-		else
-				homePlanetModel.rc:updatePath("data/models/space/nibiru_50.thModel")
-		end	
-	end
+	--if(not (behind == homeplanetBody.wasPreviouslyBehind)) then
+	--	if(behind) then
+	--			homePlanetModel.rc:updatePath("data/models/space/nibiru_50_mario.thModel") 
+	--	else
+	--			homePlanetModel.rc:updatePath("data/models/space/nibiru_50.thModel")
+	--	end	
+	--end
 	
 
 	homeplanetBody.wasPreviouslyBehind = behind
