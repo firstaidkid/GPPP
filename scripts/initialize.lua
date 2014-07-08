@@ -1,20 +1,62 @@
 print("initializing gameworld")
 
-WORLD_SIZE = 3000.0
+WORLD_SIZE = 2500.0
 REAL_WORLD_SIZE = 10000.0
 --WORLD_SIZE = 200000.0
 -- Alle Planeten Radien
 planetRadien = {}
 -- Alle Collisons Planeten vom Homeplanet
 collisionSpheres = {}
-maxSize = 100
-growAim = 5
+maxSize = 200
+minSize = 1
+growAim = 1
 currentGrow = 0
 character_size = 20
 numberOfPlanets = 100
-numberOfSmallPlanets = 50
-numberOfMidPlanets = 50
-numberOfBigPlanets = 10
+numberOfSmallPlanets = 15
+numberOfMidPlanets = 15
+numberOfBigPlanets = 15
+
+
+-- sound banks
+SoundSystem:loadLibrary(".\\data\\sound\\Master Bank.bank")
+SoundSystem:loadLibrary(".\\data\\sound\\Master Bank.bank.strings")
+SoundSystem:loadLibrary(".\\data\\sound\\Weapons.bank")
+SoundSystem:loadLibrary(".\\data\\sound\\UI_Menu.bank")
+SoundSystem:loadLibrary(".\\data\\sound\\Surround_Ambience.bank")
+SoundSystem:loadLibrary(".\\data\\sound\\Character.bank")
+
+
+
+DIFFICULTY = {
+	EASY = {
+		velocity =1
+	}
+	,
+	EASYMEDIUM = {
+		velocity = 2
+	}
+	,
+	MEDIUM = {
+		velocity = 3
+	}
+	,
+	MEDIUMHARD = {
+		velocity = 4
+	}
+	,
+	HARD = {
+		velocity = 10
+	}
+}
+
+currentDiffulty = DIFFICULTY.EASY
+
+score = 0
+
+
+
+brokenPlanets = {}
 
 textures = {
 	"data/models/planet_models/avalon.thModel",
@@ -48,6 +90,24 @@ do -- Physics world
 end
 
 
+
+function addPoint()
+	score = score + 1
+
+	if(growAim<maxSize)then
+		growAim = growAim + 1
+	end
+
+
+
+
+	--if(score)
+
+	-- body
+end
+
+
+
 function create_collisionSphere( size )
 	-- body
 	collisionSphere 				= 	{}
@@ -58,6 +118,7 @@ function create_collisionSphere( size )
 	local cinfo 			= 	RigidBodyCInfo()
 	cinfo.position 			= 	Vec3(0,0,0)
 	cinfo.shape 			= 	PhysicsFactory:createSphere(size)
+	--cinfo.shape = PhysicsFactory:createBox(Vec3(size, size, size))
 	cinfo.motionType 		= 	MotionType.Keyframed
 	cinfo.restitution 		= 	0
 	cinfo.friction 			= 	0
@@ -133,14 +194,24 @@ do -- homeWorld
 	
 	local cinfo 			= RigidBodyCInfo()
 	cinfo.position 			= Vec3(0,0,0)
-	cinfo.shape 			= PhysicsFactory:createSphere(20)
+	--cinfo.shape 			= PhysicsFactory:createSphere(20)
+	cinfo.shape 			= PhysicsFactory:createBox(Vec3(20,20,20))
 	cinfo.motionType 		= MotionType.Dynamic
 	cinfo.restitution 		= 0
 	cinfo.friction 			= 0
 	cinfo.gravityFactor 	= 0
-	cinfo.mass 				= 900000
+	cinfo.mass 				= 3
+	cinfo.linearDamping 	= .1
 	cinfo.maxLinearVelocity = 400
 
+
+	homeplanetBody.au = homeplanetBody.go:createAudioComponent()
+	homeplanetBody.collisionSound = homeplanetBody.au:createSoundInstance("CollisionSound", "/UI/Cancel")
+	homeplanetBody.explosionSound = homeplanetBody.au:createSoundInstance("ExplosionSound", "/UI/Cancel")
+
+	homeplanetBody.ambience = homeplanetBody.au:createSoundInstance("Ambience", "/Ambience/Country")
+	homeplanetBody.ambience:setVolume(0.5)
+	homeplanetBody.ambience:play()
 
 	homeplanetBody.rb = homeplanetBody.pc:createRigidBody(cinfo)
 	homeplanetBody.sc = homeplanetBody.go:createScriptComponent()
@@ -151,27 +222,11 @@ end
 do -- homeWorldModel
 	homePlanetModel 			= {}
 	homePlanetModel.go 		= GameObjectManager:createGameObject("homePlanetModel")
-	homePlanetModel.pc 		= homePlanetModel.go:createPhysicsComponent()
-	
-	local cinfo 			= RigidBodyCInfo()
-	cinfo.position 			= Vec3(0,0,0)
-	cinfo.shape 			= PhysicsFactory:createSphere(20)
-	cinfo.motionType 		= MotionType.Dynamic
-	cinfo.restitution 		= 0
-	cinfo.friction 			= 0
-	cinfo.gravityFactor 	= 0
-	cinfo.mass 				= 900000
-	cinfo.maxLinearVelocity = 400
-
-
-	homePlanetModel.rb = homePlanetModel.pc:createRigidBody(cinfo)
 	homePlanetModel.sc = homePlanetModel.go:createScriptComponent()
 	homePlanetModel.rc = homePlanetModel.go:createRenderComponent()
 	homePlanetModel.rc:setPath("data/models/planet_models/earth.thModel")
-
---	homePlanetModel.rc:setPath("data/models/home_planet/home_planet.thModel")
-
 	homePlanetModel.go:setComponentStates(ComponentState.Active)
+
 end
 
 do	-- Character
@@ -207,6 +262,77 @@ do	-- Character
 end
 
 
+function round(num, idp)
+  local mult = 10^(idp or 0)
+  return math.floor(num * mult + 0.5) / mult
+end
+
+
+
+gameover = false;
+
+function gameOver()
+
+	
+	-- body
+	
+	--.go:setComponentStates(ComponentState.Inactive)
+	--if(not gameover) then
+		print("gameover")
+		for k,v in pairs(brokenPlanets) do
+			brokenPlanets[k].go:setComponentStates(ComponentState.Active)
+			local planetVelocity = Vec3(math.random(-100, 100), math.random(-100, 100), math.random(-100, 100))
+
+			brokenPlanets[k].go:setPosition(homeplanetBody.go:getWorldPosition())
+
+			--brokenPlanets[k].rb:setLinearVelocity(planetVelocity)
+			brokenPlanets[k].rb:applyForce(1, planetVelocity:mulScalar(10))
+		end
+
+		character.go:setComponentStates(ComponentState.Inactive)
+		homePlanetModel.go:setComponentStates(ComponentState.Inactive)
+		homeplanetBody.go:setComponentStates(ComponentState.Inactive)
+
+
+		for k,v in pairs(collisionSpheres) do
+			collisionSpheres[k].go:setComponentStates(ComponentState.Inactive)
+		end
+
+		
+		gameover = true
+	--end
+end
+
+--------------------------------------------------------------------- Restart the game ---------------------------------------
+function Restart()
+
+	-- body
+	print("restart")
+	for k,v in pairs(brokenPlanets) do
+		brokenPlanets[k].go:setComponentStates(ComponentState.Inactive)
+	end
+
+	character.go:setComponentStates(ComponentState.Active)
+	homePlanetModel.go:setComponentStates(ComponentState.Active)
+	homeplanetBody.go:setComponentStates(ComponentState.Active)
+	homeplanetBody.rb:setLinearVelocity(Vec3(0,0,0))
+
+	--activate collisionSpheres
+	growAim= 5
+	grow(5)
+
+	-- 
+	for k,v in pairs(planetArr) do
+		planetArr[k].go:setPosition(Vec3(math.random(-WORLD_SIZE, WORLD_SIZE), 0, math.random(-WORLD_SIZE, WORLD_SIZE)))
+		local planetVelocity = Vec3(math.random(-50, 50), 0, math.random(-50, 50))
+
+		planetArr[k].rb:applyForce(currentDiffulty.velocity, planetVelocity)
+	end
+
+
+	gameover = false
+end
+-----------------------------------------------------------------------------------------------------------------------------
 
 
 
@@ -214,34 +340,13 @@ end
 
 function createBackgroundPlanet(number, size, position)
 	
-	backgroundPlanet = {}
-	
-	backgroundPlanet.go = GameObjectManager:createGameObject("backgroundPlanet[" .. number .. "]")
-	backgroundPlanet.pc = backgroundPlanet.go:createPhysicsComponent()
-	backgroundPlanet.go.size = size
-	local cinfo = RigidBodyCInfo()
-	cinfo.shape = PhysicsFactory:createSphere(size)
-	cinfo.motionType = MotionType.Fixed
-	cinfo.position = position
-	cinfo.mass = 2
-	cinfo.gravityFactor = 0
-	cinfo.maxLinearVelocity = 	100000000
-	backgroundPlanet.rb = backgroundPlanet.pc:createRigidBody(cinfo)
-	backgroundPlanet.rb:setUserData(backgroundPlanet)
-	
-	backgroundPlanet.rc = backgroundPlanet.go:createRenderComponent()
+	backgroundPlanet 			= 	{}
+	backgroundPlanet.go 		= 	GameObjectManager:createGameObject("backgroundPlanet[" .. number .. "]")
+	backgroundPlanet.rc 		= 	backgroundPlanet.go:createRenderComponent()
 	backgroundPlanet.rc:setPath("data/models/space/nibiru_50.thModel")
-	
-
 	backgroundPlanet.rc:setScale(Vec3(size/50, size/50, size/50))
-
-	backgroundPlanet.sc = backgroundPlanet.go:createScriptComponent()
 	backgroundPlanet.go:setComponentStates(ComponentState.Active)
-
-	--local planetVelocity = Vec3(math.random(-50, 50), 0, math.random(-50, 50))
-	--backgroundPlanet.rb:applyForce(1, planetVelocity)
-
-	--backgroundPlanet.go:setParent(homeplanetBody.go)
+	backgroundPlanet.go:setPosition(position)
 
 end
 
@@ -250,28 +355,16 @@ function createBackgroundStars(number, size, position)
 	backgroundPlanet = {}
 	
 	backgroundPlanet.go = GameObjectManager:createGameObject("backgroundStars[" .. number .. "]")
-	backgroundPlanet.pc = backgroundPlanet.go:createPhysicsComponent()
-	backgroundPlanet.go.size = size
-	local cinfo = RigidBodyCInfo()
-	cinfo.shape = PhysicsFactory:createSphere(size)
-	cinfo.motionType = MotionType.Fixed
-	cinfo.position = position
-	cinfo.mass = 2
-	cinfo.gravityFactor = 0
-	cinfo.maxLinearVelocity = 	100000000
-	backgroundPlanet.rb = backgroundPlanet.pc:createRigidBody(cinfo)
-	backgroundPlanet.rb:setUserData(backgroundPlanet)
+	
 	
 	backgroundPlanet.rc = backgroundPlanet.go:createRenderComponent()
-	backgroundPlanet.rc:setPath("data/models/planet_models/debris.thModel")
-	backgroundPlanet.rc:updatePath("data/models/textures/sun.dds")
+	backgroundPlanet.rc:setPath("data/models/planet_models/none.thModel")
 	
 
 	backgroundPlanet.rc:setScale(Vec3(size/50, size/50, size/50))
 
-	backgroundPlanet.sc = backgroundPlanet.go:createScriptComponent()
 	backgroundPlanet.go:setComponentStates(ComponentState.Active)
-
+	backgroundPlanet.go:setPosition(position)
 
 end
 
@@ -289,6 +382,7 @@ function createPlanet(number, size, position)
 	planetArr[number].go.size = size
 	local cinfo = RigidBodyCInfo()
 	cinfo.shape = PhysicsFactory:createSphere(size)
+	--cinfo.shape = PhysicsFactory:createBox(Vec3(size/1.6,size/1.6, size/1.6))
 	cinfo.motionType = MotionType.Dynamic
 	cinfo.position = position
 	cinfo.mass = 2
@@ -314,7 +408,7 @@ function createPlanet(number, size, position)
 	local planetVelocity = Vec3(math.random(-50, 50), 0, math.random(-50, 50))
 
 	--planetArr[number].rb:setLinearVelocity(planetVelocity)
-	planetArr[number].rb:applyForce(1, planetVelocity)
+	planetArr[number].rb:applyForce(currentDiffulty.velocity, planetVelocity)
 	
 	--createGravityZone(number, size)
 	
@@ -322,6 +416,63 @@ function createPlanet(number, size, position)
 	--planetArr[number].gz = createGravityZone(size, planetArr[number])
 	--planetArr[number].gz.go:setComponentStates(ComponentState.Inactive)
 end
+
+
+
+
+
+function createBrokenPlanet(number, size, position)
+	brokenPlanet = {}
+	
+
+	brokenPlanet.go = GameObjectManager:createGameObject(nextGUID())
+	brokenPlanet.pc = brokenPlanet.go:createPhysicsComponent()
+	brokenPlanet.go.isGone = false
+	brokenPlanet.go.isGravity = false
+	brokenPlanet.go.size = size
+	local cinfo = RigidBodyCInfo()
+	--cinfo.shape = PhysicsFactory:createSphere(size)
+	cinfo.shape = PhysicsFactory:createBox(Vec3(size/1.6,size/1.6, size/1.6))
+	cinfo.motionType = MotionType.Dynamic
+	cinfo.position = position
+	cinfo.mass = 2
+	cinfo.gravityFactor = 0
+	cinfo.linearDamping = .3
+	cinfo.maxLinearVelocity = 	100000000
+	cinfo.collisionFilterInfo = 0xff1f
+	brokenPlanet.rb = brokenPlanet.pc:createRigidBody(cinfo)
+	-- stores the table inside the rigidbody
+	brokenPlanet.rb:setUserData(brokenPlanet)
+	
+	brokenPlanet.rc = brokenPlanet.go:createRenderComponent()
+	-- brokenPlanet.rc:setPath("data/models/space/nibiru_" .. size .. ".thModel")
+	--brokenPlanet.rc:setPath(textures[math.random(1,4)])
+	brokenPlanet.rc:setPath("data/models/planet_models/earth.thModel")
+	
+
+	brokenPlanet.rc:setScale(Vec3(size/200, size/200, size/200))
+
+	brokenPlanet.sc = brokenPlanet.go:createScriptComponent()
+	brokenPlanet.go:setComponentStates(ComponentState.Inactive)
+	brokenPlanet.size = size
+
+
+
+	--planetArr[number].rb:setLinearVelocity(planetVelocity)
+	
+	--createGravityZone(number, size)
+	
+	--GravityZone
+	--planetArr[number].gz = createGravityZone(size, planetArr[number])
+	--planetArr[number].gz.go:setComponentStates(ComponentState.Inactive)
+	return brokenPlanet
+end
+
+for i=1,40 do
+	brokenPlanets[i] = createBrokenPlanet(i, 5, Vec3(0,0,0))
+
+end
+
 
 
 
@@ -458,7 +609,7 @@ function grow( i )
 
 	-- apply impulse
 	--character.go:setPosition(characterUpDirection:mulScalar(i *20))
-	homePlanetModel.rc:setScale(Vec3(i/5 ,i/5,i/5))
+	homePlanetModel.rc:setScale(Vec3((50 + i)/500 ,(50 + i)/500,(50 + i)/500))
 	print(homePlanetModel.rc)
 
 	--targetObject:setScale(Vec3(2,2,2))
@@ -478,7 +629,7 @@ function grow( i )
 end
 
 for i=1,maxSize do 
-	planetRadien[i] = i* 10
+	planetRadien[i] = 50 + i
 	collisionSpheres[i] = create_collisionSphere(planetRadien[i])
 	collisionSpheres[i].go:setComponentStates(ComponentState.Inactive)
 end
@@ -503,6 +654,9 @@ function addDebris(i)
 	
 	particle.rb = particle.pc:createRigidBody(cinfo)
 
+	particle.rc = particle.go:createRenderComponent()
+	particle.rc:setPath("data/models/planet_models/none.thModel")
+
 	particle.go:setComponentStates(ComponentState.Inactive)
 
 	return particle
@@ -512,7 +666,7 @@ function spawnDebris(position, normal)
 	for i = 1, #debris do
 		debris[i].go:setPosition(position)
 		debris[i].go:setComponentStates(ComponentState.Active)
-		debris[i].rb:applyLinearImpulse(Vec3(normal.x * math.random(50), normal.y * math.random(200), normal.z * math.random(100)))
+		debris[i].rb:applyLinearImpulse(normal:mulScalar(100))
 	end
 	debris.timer = 0
 
