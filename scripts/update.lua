@@ -155,7 +155,7 @@ function updateCharacter( elapsedTime )
 				spawnDebris(homeplanetBody.go:getWorldPosition(), planetUpdirection)
 
 				if(acceleration>-MAX_IMPULSE)then
-					acceleration = acceleration - 6
+					acceleration = acceleration - 3
 				end
 
 				velocityDirection = characterUpDirection:mulScalar(acceleration)
@@ -164,7 +164,7 @@ function updateCharacter( elapsedTime )
 			end
 		else
 			if(acceleration<-2)then
-				acceleration = acceleration + 6
+				acceleration = acceleration + 3
 			end		
 		end
 
