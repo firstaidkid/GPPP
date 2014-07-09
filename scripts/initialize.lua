@@ -288,7 +288,7 @@ function createPlanet(number, size, position)
 	planetArr[number].size = size
 	
 	--## create GravityZone around Planet
-	createGravityZone(number, size)
+	--createGravityZone(number, size)
 	
 	--GravityZone
 	--planetArr[number].gz = createGravityZone(size, planetArr[number])
