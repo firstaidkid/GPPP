@@ -2,28 +2,39 @@ print("initializing gameworld")
 
 WORLD_SIZE = 2500.0
 REAL_WORLD_SIZE = 10000.0
+
+MAX_IMPULSE = 200
 --WORLD_SIZE = 200000.0
 -- Alle Planeten Radien
 planetRadien = {}
 -- Alle Collisons Planeten vom Homeplanet
 collisionSpheres = {}
-maxSize = 200
-minSize = 1
+NUM_COLLISIONSHERES = 200
+MIN_COLLISIONSHERES = 1
 growAim = 1
 currentGrow = 0
 character_size = 20
 numberOfPlanets = 100
 numberOfSmallPlanets = 15
-numberOfMidPlanets = 15
-numberOfBigPlanets = 15
+numberOfMidPlanets = 20
+numberOfBigPlanets = 10
 
-massPerSize = 1000
+massPerSize = 50
+
+--the higher the gravity, the smaller the force
+PLANET_GRAVITY = 200
+
 
 -- size of CollisionCheckSphere
 colSpSize = 500
 checkArray = {}
 nearestPlanet = nil
 planetArr = {}
+gameover = false
+
+
+
+
 
 -- sound banks
 SoundSystem:loadLibrary(".\\data\\sound\\Master Bank.bank")
@@ -37,23 +48,23 @@ SoundSystem:loadLibrary(".\\data\\sound\\Character.bank")
 
 DIFFICULTY = {
 	EASY = {
-		velocity =1
+		velocity =1500
 	}
 	,
 	EASYMEDIUM = {
-		velocity = 2
+		velocity = 2500
 	}
 	,
 	MEDIUM = {
-		velocity = 3
+		velocity = 3500
 	}
 	,
 	MEDIUMHARD = {
-		velocity = 4
+		velocity = 6500
 	}
 	,
 	HARD = {
-		velocity = 10
+		velocity = 12000
 	}
 }
 
@@ -101,41 +112,34 @@ end
 function addPoint()
 	score = score + 1
 
-	if(growAim<maxSize)then
+	if(growAim<NUM_COLLISIONSHERES)then
 		growAim = growAim + 1
 	end
-
-
-
-
-	--if(score)
-
-	-- body
 end
 
 
 
 function create_collisionSphere( size )
 	-- body
-	collisionSphere 				= 	{}
+	collisionSphere 			= 	{}
 	collisionSphere.go 			= 	GameObjectManager:createGameObject(nextGUID())
-	collisionSphere.go.size = size
+	collisionSphere.go.size 	= 	size
 	collisionSphere.pc 			= 	collisionSphere.go:createPhysicsComponent()
 
-	collisionSphere.go.mass = size * massPerSize
+	collisionSphere.go.mass 	= 	size * massPerSize
 	
 	local cinfo 			= 	RigidBodyCInfo()
-	cinfo.position 			= 	Vec3(0,0,0)
-	cinfo.shape 			= 	PhysicsFactory:createSphere(size)
-	--cinfo.shape = PhysicsFactory:createBox(Vec3(size, size, size))
-	cinfo.motionType 		= 	MotionType.Keyframed
-	cinfo.restitution 		= 	0
-	cinfo.friction 			= 	0
-	cinfo.gravityFactor 	= 	0
-	cinfo.mass 				= 	size * massPerSize
-	cinfo.maxLinearVelocity = 	10000
-	cinfo.collisionFilterInfo = 0xff1f
-	cinfo.isTriggerVolume = true
+	cinfo.position 				= 	Vec3(0,0,0)
+	cinfo.shape 				= 	PhysicsFactory:createSphere(size)
+	--cinfo.shape 				= 	PhysicsFactory:createBox(Vec3(size, size, size))
+	cinfo.motionType 			= 	MotionType.Keyframed
+	cinfo.restitution 			= 	0
+	cinfo.friction 				= 	0
+	cinfo.gravityFactor 		= 	0
+	cinfo.mass 					= 	size * massPerSize
+	cinfo.maxLinearVelocity 	= 	10000
+	cinfo.collisionFilterInfo 	= 	0xff1f
+	cinfo.isTriggerVolume 		= 	true
 	collisionSphere.rb 			= 	collisionSphere.pc:createRigidBody(cinfo)
 	
 	-- stores the table inside the rigidbody
@@ -143,48 +147,39 @@ function create_collisionSphere( size )
 
 	collisionSphere.rb:getTriggerEvent():registerListener(function(args)
 		local planet = args:getRigidBody():getUserData()
-
-		
 			if args:getEventType() == TriggerEventType.Entered then
-
 				planet.go.isGone = true
-
 			elseif args:getEventType() == TriggerEventType.Left then
-
 			end
 		return EventResult.Handled
 	end)
 	collisionSphere.go:setParent(homeplanetBody.go)
-	
 	return collisionSphere
 end
 
 function create_CollisionCheckSphere(size)
-	-- body
 	colCheckSphere 				= 	{}
-
 	colCheckSphere.go 			= 	GameObjectManager:createGameObject(nextGUID())
 	colCheckSphere.pc 			= 	colCheckSphere.go:createPhysicsComponent()
-
-	local cinfo 			= 	RigidBodyCInfo()
-	cinfo.position 			= 	Vec3(0,0,0)
-	cinfo.shape 			= 	PhysicsFactory:createSphere(size)
-	cinfo.motionType 		= 	MotionType.Keyframed
-	cinfo.restitution 		= 	0
-	cinfo.friction 			= 	0
-	cinfo.gravityFactor 	= 	0
-	cinfo.mass 				= 	size * massPerSize
-	cinfo.maxLinearVelocity = 	10000
-	cinfo.collisionFilterInfo = 0xff1f
-	cinfo.isTriggerVolume = true
+	local cinfo 				= 	RigidBodyCInfo()
+	cinfo.position 				= 	Vec3(0,0,0)
+	cinfo.shape 				= 	PhysicsFactory:createSphere(size)
+	cinfo.motionType 			= 	MotionType.Keyframed
+	cinfo.restitution 			= 	0
+	cinfo.friction 				= 	0
+	cinfo.gravityFactor 		= 	0
+	cinfo.mass 					= 	size * massPerSize
+	cinfo.maxLinearVelocity 	= 	10000
+	cinfo.collisionFilterInfo 	= 	0xff1f
+	cinfo.isTriggerVolume 		= 	true
 	colCheckSphere.rb 			= 	colCheckSphere.pc:createRigidBody(cinfo)
 	
 	-- stores the table inside the rigidbody
 	colCheckSphere.rb:setUserData(colCheckSphere)
 
 	colCheckSphere.rb:getTriggerEvent():registerListener(function(args)
-		local planet = args:getRigidBody():getUserData()
-		local name = planet.go:getName()
+		local planet 	=	args:getRigidBody():getUserData()
+		local name 		= 	planet.go:getName()
 				
 		if args:getEventType() == TriggerEventType.Entered then
 			-- print("in : " .. name)
@@ -257,20 +252,19 @@ do -- homeWorld
 end
 
 do -- homeWorldModel
-	homePlanetModel 			= {}
-	homePlanetModel.go 		= GameObjectManager:createGameObject("homePlanetModel")
-	homePlanetModel.sc = homePlanetModel.go:createScriptComponent()
-	homePlanetModel.rc = homePlanetModel.go:createRenderComponent()
+	homePlanetModel 		= 	{}
+	homePlanetModel.go 		= 	GameObjectManager:createGameObject("homePlanetModel")
+	homePlanetModel.sc 		= 	homePlanetModel.go:createScriptComponent()
+	homePlanetModel.rc 		= 	homePlanetModel.go:createRenderComponent()
 	homePlanetModel.rc:setPath("data/models/planet_models/earth.thModel")
 	homePlanetModel.go:setComponentStates(ComponentState.Active)
-
 end
 
 do	-- Character
-	character = {}
-	character.go = GameObjectManager:createGameObject("character")
+	character 		= 	{}
+	character.go 	= 	GameObjectManager:createGameObject("character")
 
-	character.sc = character.go:createScriptComponent()
+	character.sc 	= 	character.go:createScriptComponent()
 	local renderComponent = character.go:createRenderComponent()
 	
 	renderComponent:setPath("data/models/roboter/robot2.thModel")
@@ -308,13 +302,10 @@ end
 
 
 
-gameover = false;
+
 
 function gameOver()
 
-	
-	-- body
-	
 	--.go:setComponentStates(ComponentState.Inactive)
 	--if(not gameover) then
 		print("gameover")
@@ -364,10 +355,8 @@ function Restart()
 	for k,v in pairs(planetArr) do
 		planetArr[k].go:setPosition(Vec3(math.random(-WORLD_SIZE, WORLD_SIZE), 0, math.random(-WORLD_SIZE, WORLD_SIZE)))
 		local planetVelocity = Vec3(math.random(-50, 50), 0, math.random(-50, 50))
-
 		planetArr[k].rb:applyForce(currentDiffulty.velocity, planetVelocity)
 	end
-
 
 	gameover = false
 end
@@ -390,18 +379,11 @@ function createBackgroundPlanet(number, size, position)
 end
 
 function createBackgroundStars(number, size, position)
-	
 	backgroundPlanet = {}
-	
 	backgroundPlanet.go = GameObjectManager:createGameObject("backgroundStars[" .. number .. "]")
-	
-	
 	backgroundPlanet.rc = backgroundPlanet.go:createRenderComponent()
 	backgroundPlanet.rc:setPath("data/models/planet_models/none.thModel")
-	
-
 	backgroundPlanet.rc:setScale(Vec3(size/50, size/50, size/50))
-
 	backgroundPlanet.go:setComponentStates(ComponentState.Active)
 	backgroundPlanet.go:setPosition(position)
 
@@ -412,8 +394,6 @@ end
 
 function createPlanet(number, size, position)
 	planetArr[number] = {}
-	
-
 	planetArr[number].go = GameObjectManager:createGameObject("planetArr_" .. number)
 	planetArr[number].pc = planetArr[number].go:createPhysicsComponent()
 	planetArr[number].go.isGone = false
@@ -422,7 +402,6 @@ function createPlanet(number, size, position)
 	planetArr[number].go.mass = size * massPerSize
 	local cinfo = RigidBodyCInfo()
 	cinfo.shape = PhysicsFactory:createSphere(size)
-	--cinfo.shape = PhysicsFactory:createBox(Vec3(size/1.6,size/1.6, size/1.6))
 	cinfo.motionType = MotionType.Dynamic
 	cinfo.position = position
 	cinfo.mass = size * massPerSize
@@ -430,14 +409,12 @@ function createPlanet(number, size, position)
 	cinfo.maxLinearVelocity = 	100000000
 	cinfo.collisionFilterInfo = 0xff1f
 	planetArr[number].rb = planetArr[number].pc:createRigidBody(cinfo)
+	
 	-- stores the table inside the rigidbody
 	planetArr[number].rb:setUserData(planetArr[number])
 	
 	planetArr[number].rc = planetArr[number].go:createRenderComponent()
-	-- planetArr[number].rc:setPath("data/models/space/nibiru_" .. size .. ".thModel")
 	planetArr[number].rc:setPath(textures[math.random(1,4)])
-	
-
 	planetArr[number].rc:setScale(Vec3(size/50, size/50, size/50))
 
 	planetArr[number].sc = planetArr[number].go:createScriptComponent()
@@ -449,12 +426,6 @@ function createPlanet(number, size, position)
 
 	--planetArr[number].rb:setLinearVelocity(planetVelocity)
 	planetArr[number].rb:applyForce(currentDiffulty.velocity, planetVelocity)
-	
-	--createGravityZone(number, size)
-	
-	--GravityZone
-	--planetArr[number].gz = createGravityZone(size, planetArr[number])
-	--planetArr[number].gz.go:setComponentStates(ComponentState.Inactive)
 end
 
 
@@ -464,7 +435,6 @@ end
 function createBrokenPlanet(number, size, position)
 	brokenPlanet = {}
 	
-
 	brokenPlanet.go = GameObjectManager:createGameObject(nextGUID())
 	brokenPlanet.pc = brokenPlanet.go:createPhysicsComponent()
 	brokenPlanet.go.isGone = false
@@ -485,8 +455,6 @@ function createBrokenPlanet(number, size, position)
 	brokenPlanet.rb:setUserData(brokenPlanet)
 	
 	brokenPlanet.rc = brokenPlanet.go:createRenderComponent()
-	-- brokenPlanet.rc:setPath("data/models/space/nibiru_" .. size .. ".thModel")
-	--brokenPlanet.rc:setPath(textures[math.random(1,4)])
 	brokenPlanet.rc:setPath("data/models/planet_models/earth.thModel")
 	
 
@@ -510,7 +478,6 @@ end
 
 for i=1,40 do
 	brokenPlanets[i] = createBrokenPlanet(i, 5, Vec3(0,0,0))
-
 end
 
 
@@ -543,16 +510,12 @@ for j=1 , numberOfSmallPlanets do
 	
 	local size = math.random(20, 50)
 	createPlanet(j, size, position)
-
-	-- planetArr[j].gz.go:setComponentStates(ComponentState.Aktive)
 end
 for j=#planetArr+1 , #planetArr + numberOfMidPlanets do
     local position = Vec3(math.random(-WORLD_SIZE, WORLD_SIZE), 0, math.random(-WORLD_SIZE, WORLD_SIZE))
 	
 	local size = math.random(51, 100)
 	createPlanet(j, size, position)
-
-	-- planetArr[j].gz.go:setComponentStates(ComponentState.Aktive)
 end
 
 for j=#planetArr+1 , #planetArr + numberOfBigPlanets do
@@ -560,18 +523,13 @@ for j=#planetArr+1 , #planetArr + numberOfBigPlanets do
 	
 	local size = math.random(101, 200)
 	createPlanet(j, size, position)
-
-	-- planetArr[j].gz.go:setComponentStates(ComponentState.Aktive)
 end
 
 -- create Background Planets
 for j=1 , 100 do
     local position = Vec3(math.random(-REAL_WORLD_SIZE/2, REAL_WORLD_SIZE/2), math.random(2000, 3000), math.random(-REAL_WORLD_SIZE/2, REAL_WORLD_SIZE/2))
-	
 	local size = math.random(20, 200)
 	createBackgroundPlanet(j, size, position)
-
-	-- planetArr[j].gz.go:setComponentStates(ComponentState.Aktive)
 end
 
 -- create Background Stars
@@ -580,8 +538,6 @@ for j=1 , 300 do
 	
 	local size = math.random(100, 500)
 	createBackgroundStars(j, size, position)
-
-	-- planetArr[j].gz.go:setComponentStates(ComponentState.Aktive)
 end
 
 
@@ -659,7 +615,7 @@ function grow( i )
 
 end
 
-for i=1,maxSize do 
+for i=1,NUM_COLLISIONSHERES do 
 	planetRadien[i] = 50 + i
 	collisionSpheres[i] = create_collisionSphere(planetRadien[i])
 	collisionSpheres[i].go:setComponentStates(ComponentState.Inactive)

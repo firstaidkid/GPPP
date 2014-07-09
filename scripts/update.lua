@@ -59,10 +59,10 @@ function defaultUpdate(updateData)
 	for i=1 , #checkArray do
 		local planetNumber = checkArray[i]
 		local forceFromPlanet = gravForce(planetNumber)
-		planetArr[planetNumber].rb:setLinearVelocity(forceFromPlanet:mulScalar(elapsedTime * -1 / 10000) + planetArr[planetNumber].rb:getLinearVelocity())
+		planetArr[planetNumber].rb:setLinearVelocity(forceFromPlanet:mulScalar(elapsedTime * -1 / PLANET_GRAVITY) + planetArr[planetNumber].rb:getLinearVelocity())
 		force = force + forceFromPlanet
 	end
-	homeplanetBody.rb:setLinearVelocity(force:mulScalar(elapsedTime / 20000) + homeplanetBody.rb:getLinearVelocity())
+	homeplanetBody.rb:setLinearVelocity(force:mulScalar(elapsedTime / (3*PLANET_GRAVITY)) + homeplanetBody.rb:getLinearVelocity())
 	DebugRenderer:printText(Vec2(-0.7, 0.3), "  Gravity Strenght: " .. tostring(math.sqrt(force.x*force.x+force.y*force.y*force.z*force.z)))
 	updateShortDistance()
 
@@ -78,19 +78,10 @@ function updateCharacter( elapsedTime )
 	
 	local realTime = elapsedTime * 100
 
-	--if(roundTimer % 15 == 0) then
-		--	homeplanetBody.ambience:stop()
-		--	homeplanetBody.ambience:play()
-
-	--end
-
-
 	DebugRenderer:printText(Vec2(-0.99, 0.7), "time: " .. tostring(roundTimer))
 
 	character.ac:setBoneDebugDrawingEnabled(false)
 	DebugRenderer:printText(Vec2(-0.99, 0.6), "acceleration: " .. tostring(acceleration))
-
-	--DebugRenderer:printText3D(Vec3(0,-600,100), "Text3D colored!", Color(0,0,1,1))
 
 	if(gameover)then
 		textPos = debugCam.cc:getWorldPosition()
@@ -130,24 +121,7 @@ function updateCharacter( elapsedTime )
 		character.ac:easeIn(character.idles[1], 0.0)
 		character.ac:easeOut("Walk", 0.0)
 	end
-	
-		--Key Events
-	if(InputHandler:isPressed(Key.S)) then
-		--quaternion = Quaternion(characterRightDirection, -2)
-		--homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
-	end
-	if(InputHandler:isPressed(Key.W)) then
-		--quaternion = Quaternion(characterRightDirection, 2)
-		--homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
-	end
-	if(InputHandler:isPressed(Key.A)) then
-		--quaternion = Quaternion(characterUpDirection, 3)
-		--homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
-	end
-	if(InputHandler:isPressed(Key.D)) then
-		--quaternion = Quaternion(characterUpDirection, -3)
-		--homeplanetBody.go:setRotation(quaternion * homeplanetBody.go:getWorldRotation())
-	end
+
 
 	if(InputHandler:isPressed(Key.R)) then
 		--Restart game
@@ -180,19 +154,13 @@ function updateCharacter( elapsedTime )
 				planetUpdirection = homeplanetBody.go:getUpDirection()
 				spawnDebris(homeplanetBody.go:getWorldPosition(), planetUpdirection)
 
-				if(growAim>minSize)then
-					--growAim = growAim - .1
-				end
-
-				if(acceleration>-250)then
+				if(acceleration>-MAX_IMPULSE)then
 					acceleration = acceleration - 6
 				end
 
 				velocityDirection = characterUpDirection:mulScalar(acceleration)
 
 				homeplanetBody.rb:applyForce(1, characterUpDirection:mulScalar(acceleration))				
-				-- homeplanetBody.rb:applyForce(0.5, characterUpDirection:mulScalar(-10000))
-				
 			end
 		else
 			if(acceleration<-2)then
@@ -326,7 +294,7 @@ function updatePlanet(planet)
 
 	planet.go:setPosition(Vec3(pos.x, 0, pos.z))
 	homepos = homeplanetBody.go:getWorldPosition()
-	if(math.abs(pos.x - homepos.x)>1500 )then
+	if(math.abs(pos.x - homepos.x)>1700 )then
 		spawnPoint = 0
 		spawnFlag = math.random(0,1)
 		if(spawnFlag==1)then
@@ -339,7 +307,7 @@ function updatePlanet(planet)
 	
 	end
 
-	if(math.abs(pos.z - homepos.z)>1000 )then
+	if(math.abs(pos.z - homepos.z)>1200 )then
 		spawnPoint = 0
 		spawnFlag = math.random(0,1)
 		if(spawnFlag==1)then
@@ -353,11 +321,6 @@ function updatePlanet(planet)
 	end
 	
 
-
-	--print("position: " .. pos.x .. ", " .. pos.z)
-
-
-	
 	if(planet.go.isGone) then
 		print("planet collided : " .. tostring( planet.go.size))
 		print("homeplanet Size: " .. tostring( currentCollider.go.size))
@@ -398,7 +361,7 @@ function planetUpdate( updateData )
 
 
 	if(InputHandler:isPressed(Key._1)) then
-		if(growAim>minSize) then
+		if(growAim>MIN_COLLISIONSHERES) then
 
 			growAim = growAim -1
 		end
@@ -433,8 +396,6 @@ function debugCamUpdate(updateData)
 	-- für Updates
 	defaultUpdate(updateData)
 	--
-	
-	--DebugRenderer:printText(Vec2(-0.9, 0.85), "debugCamUpdate")
 
 	target = homeplanetBody.go:getWorldPosition()
 
