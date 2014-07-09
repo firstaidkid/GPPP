@@ -280,12 +280,12 @@ do	-- Character
 	character.activeIdle = 0 -- no Idle
 	
 	-- set Walk
-	character.ac:addAnimationFile("Walk", "data/models/roboter/robot_walk.hkt")
+	character.ac:addAnimationFile("Walk", "data/models/roboter/robot_walk3.hkt")
 	--character.ac:setPlaybackSpeed("Walk", 1)
 	
 	-- set Attack
 	character.attacks = { "Attack", "Attack2" }
-	character.ac:addAnimationFile(character.attacks[1], "data/models/roboter/robot_shot.hkt")
+	character.ac:addAnimationFile(character.attacks[1], "data/models/roboter/robot_shot2.hkt")
 	character.activeAttack = 0 -- no attack
 	
 	character.go:setComponentStates(ComponentState.Active)
