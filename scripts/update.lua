@@ -412,9 +412,9 @@ function normalCamIsometricUpdate(updateData)
 
 	if(not (behind == homeplanetBody.wasPreviouslyBehind)) then
 		if(behind) then
-				homePlanetModel.rc:updatePath("data/models/space/nibiru_50_mario.thModel") 
+				--homePlanetModel.rc:updatePath("data/models/space/nibiru_50_mario.thModel") 
 		else
-				homePlanetModel.rc:updatePath("data/models/space/nibiru_50.thModel")
+				--homePlanetModel.rc:updatePath("data/models/space/nibiru_50.thModel")
 		end	
 	end
 	
